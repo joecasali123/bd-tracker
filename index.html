@@ -412,22 +412,14 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <div class="toast" id="toast"></div>
 
 <script>
-function waitForSupabase(cb, tries) {
-  tries = tries || 0;
-  if (window.supabase && window.supabase.createClient) { cb(); }
-  else if (tries < 50) { setTimeout(function(){ waitForSupabase(cb, tries+1); }, 100); }
-  else { console.error('Supabase failed to load'); cb(); }
-}
-</script>
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script>
 window.addEventListener('load', function() {
-  waitForSupabase(function() {
+(function() {
 const CLIENTS = ["Vinci Energies","Group Pomona","JCDecaux","Galeries Lafayette","Petit Forister","Opella","MSD Animal Health","Sodexo","Groupe Avril","Mobilize Financial Services","IN Groupe","EDF","Decathlon","Sopra Steria / John Cockerill","ENGIE","TotalEnergies","Veolia","Schneider Electric","Saint-Gobain","Michelin","Safran","Bouygues Construction","Carrefour","Auchan Retail","Air France-KLM","SNCF","BNP Paribas","Société Générale","Sanofi","Ipsen","Enedis","Other"];
 const PAGE_TITLES = { today:'Today', log:'Log day', history:'History', recap:'Weekly recap', contacts:'Contacts', book:'Contact book' };
 
-// ── Supabase ──────────────────────────────────────────────────────
-const _sb = supabase.createClient('https://nkblbfjrwedrbrztcvcw.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rYmxiZmpyd2VkcmJyenRjdmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0OTM1NTYsImV4cCI6MjA4OTA2OTU1Nn0.asnuQM-Z6i8QDEPyrzRB_h1cPnOmUyPlwmho_L4f9JU');
+// ── Supabase REST (no library needed) ────────────────────────────
+const SB_URL = 'https://nkblbfjrwedrbrztcvcw.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rYmxiZmpyd2VkcmJyenRjdmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0OTM1NTYsImV4cCI6MjA4OTA2OTU1Nn0.asnuQM-Z6i8QDEPyrzRB_h1cPnOmUyPlwmho_L4f9JU';
 
 let data = [];
 let _book = [];
@@ -437,16 +429,32 @@ function persist() { saveToSupabase(); }
 function getBook() { return _book; }
 function saveBook(b) { _book = b; saveToSupabase(); }
 
+async function sbFetch(method, body) {
+  const res = await fetch(SB_URL + '/rest/v1/bd_data?id=eq.singleton', {
+    method: method,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates' : 'return=minimal'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return method === 'GET' ? res.json() : res;
+}
+
 async function loadFromSupabase() {
   showSyncStatus('Loading…');
   try {
-    const { data: rows, error } = await _sb.from('bd_data').select('*').eq('id','singleton').single();
-    if (error) throw error;
-    data = rows.entries || [];
-    _book = rows.contacts || [];
+    const rows = await sbFetch('GET');
+    if (rows && rows.length > 0) {
+      data = rows[0].entries || [];
+      _book = rows[0].contacts || [];
+    }
     showSyncStatus('');
   } catch(e) {
-    showSyncStatus('Offline — changes saved locally', true);
+    showSyncStatus('Offline — using local cache', true);
     try { data = JSON.parse(localStorage.getItem('bd_v1_cache') || '[]'); } catch(x) {}
     try { _book = JSON.parse(localStorage.getItem('bd_book_cache') || '[]'); } catch(x) {}
   }
@@ -454,19 +462,17 @@ async function loadFromSupabase() {
 }
 
 async function saveToSupabase() {
-  // Always cache locally as backup
   localStorage.setItem('bd_v1_cache', JSON.stringify(data));
   localStorage.setItem('bd_book_cache', JSON.stringify(_book));
   if (_syncing) return;
   _syncing = true;
   showSyncStatus('Saving…');
   try {
-    const { error } = await _sb.from('bd_data').upsert({ id:'singleton', entries: data, contacts: _book, updated_at: new Date().toISOString() });
-    if (error) throw error;
+    await sbFetch('POST', { id:'singleton', entries: data, contacts: _book, updated_at: new Date().toISOString() });
     showSyncStatus('Saved');
     setTimeout(() => showSyncStatus(''), 2000);
   } catch(e) {
-    showSyncStatus('Save failed — will retry', true);
+    showSyncStatus('Save failed', true);
   }
   _syncing = false;
 }
@@ -1088,7 +1094,7 @@ try {
 } catch(e) {}
 addBlock();
 loadFromSupabase();
-  }); // end waitForSupabase
+})(); // end IIFE
 }); // end load
 </script>
 </body>
