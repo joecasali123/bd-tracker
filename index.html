@@ -411,9 +411,18 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 <div class="toast" id="toast"></div>
 
+<script>
+function waitForSupabase(cb, tries) {
+  tries = tries || 0;
+  if (window.supabase && window.supabase.createClient) { cb(); }
+  else if (tries < 50) { setTimeout(function(){ waitForSupabase(cb, tries+1); }, 100); }
+  else { console.error('Supabase failed to load'); cb(); }
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-window.addEventListener('DOMContentLoaded', function() {
+window.addEventListener('load', function() {
+  waitForSupabase(function() {
 const CLIENTS = ["Vinci Energies","Group Pomona","JCDecaux","Galeries Lafayette","Petit Forister","Opella","MSD Animal Health","Sodexo","Groupe Avril","Mobilize Financial Services","IN Groupe","EDF","Decathlon","Sopra Steria / John Cockerill","ENGIE","TotalEnergies","Veolia","Schneider Electric","Saint-Gobain","Michelin","Safran","Bouygues Construction","Carrefour","Auchan Retail","Air France-KLM","SNCF","BNP Paribas","Société Générale","Sanofi","Ipsen","Enedis","Other"];
 const PAGE_TITLES = { today:'Today', log:'Log day', history:'History', recap:'Weekly recap', contacts:'Contacts', book:'Contact book' };
 
@@ -1079,7 +1088,8 @@ try {
 } catch(e) {}
 addBlock();
 loadFromSupabase();
-}); // end DOMContentLoaded
+  }); // end waitForSupabase
+}); // end load
 </script>
 </body>
 </html>
