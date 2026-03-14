@@ -412,8 +412,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 <div class="toast" id="toast"></div>
 
 <script>
-window.addEventListener('load', function() {
-(function() {
 const CLIENTS = ["Vinci Energies","Group Pomona","JCDecaux","Galeries Lafayette","Petit Forister","Opella","MSD Animal Health","Sodexo","Groupe Avril","Mobilize Financial Services","IN Groupe","EDF","Decathlon","Sopra Steria / John Cockerill","ENGIE","TotalEnergies","Veolia","Schneider Electric","Saint-Gobain","Michelin","Safran","Bouygues Construction","Carrefour","Auchan Retail","Air France-KLM","SNCF","BNP Paribas","Société Générale","Sanofi","Ipsen","Enedis","Other"];
 const PAGE_TITLES = { today:'Today', log:'Log day', history:'History', recap:'Weekly recap', contacts:'Contacts', book:'Contact book' };
 
@@ -1085,17 +1083,23 @@ function preSelectClient(company) {
 }
 
 // ── Init ─────────────────────────────────────────────────────────
-try {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const dd = String(today.getDate()).padStart(2,'0');
-  document.getElementById('log-date').value = yyyy+'-'+mm+'-'+dd;
-} catch(e) {}
-addBlock();
-loadFromSupabase();
-})(); // end IIFE
-}); // end load
+function _init() {
+  try {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
+    document.getElementById('log-date').value = yyyy+'-'+mm+'-'+dd;
+  } catch(e) {}
+  addBlock();
+  loadFromSupabase();
+}
+// ── Auto init on DOM ready ────────────────────────────────────────
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _init);
+} else {
+  _init();
+}
 </script>
 </body>
 </html>
