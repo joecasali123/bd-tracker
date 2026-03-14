@@ -986,26 +986,30 @@ function renderToday() {
     .filter(c => c.responded && c.lastDate >= new Date(today - 7*86400000).toISOString().split('T')[0]);
 
   // ── SECTION 3: Spec targets for today ────────────────────────
-  // Score each company: hot tier + days since last contact
-  const allClients = CLIENTS.filter(c => c !== 'Other');
-  const scored = allClients.map(co => {
-    const lc = lastContact[co];
-    const daysSince = lc ? Math.round((today - new Date(lc.date)) / 86400000) : 999;
-    const isHot = HOT_CLIENTS.includes(co);
-    const neverContacted = !lc;
-    // Priority score: hot tier base + days since (capped) + never-contacted bonus
-    const score = (isHot ? 100 : 0) + Math.min(daysSince, 60) + (neverContacted ? 30 : 0);
-    return { co, daysSince, isHot, neverContacted, score, lc };
-  });
+  // Lock targets for the day — only recalculate when date changes
+  const TARGETS_KEY = 'bd_daily_targets';
+  let savedTargets = null;
+  try {
+    const stored = JSON.parse(localStorage.getItem(TARGETS_KEY) || 'null');
+    if (stored && stored.date === todayStr) { savedTargets = stored.targets; }
+  } catch(e) {}
 
-  // Exclude already contacted today
-  const contactedToday = new Set(
-    (data.find(e => e.date === todayStr) || { clients: [] }).clients.map(c => c.company)
-  );
-  const targets = scored
-    .filter(s => !contactedToday.has(s.co))
-    .sort((a,b) => b.score - a.score)
-    .slice(0, 3);
+  let targets = savedTargets;
+  if (!targets) {
+    // Calculate fresh targets for today
+    const allClients = CLIENTS.filter(c => c !== 'Other');
+    const scored = allClients.map(co => {
+      const lc = lastContact[co];
+      const daysSince = lc ? Math.round((today - new Date(lc.date)) / 86400000) : 999;
+      const isHot = HOT_CLIENTS.includes(co);
+      const neverContacted = !lc;
+      const score = (isHot ? 100 : 0) + Math.min(daysSince, 60) + (neverContacted ? 30 : 0);
+      return { co, daysSince, isHot, neverContacted, score, lc };
+    });
+    targets = scored.sort((a,b) => b.score - a.score).slice(0, 3);
+    // Save locked targets for today
+    try { localStorage.setItem(TARGETS_KEY, JSON.stringify({ date: todayStr, targets })); } catch(e) {}
+  }
 
   // ── Render ────────────────────────────────────────────────────
   const dayName = today.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
