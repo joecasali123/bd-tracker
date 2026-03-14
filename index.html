@@ -6,335 +6,146 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>BD Tracker</title>
-
 <style>
 :root {
-  --bg: #0f0f11;
-  --surface: #18181c;
-  --surface2: #1f1f25;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.13);
-  --text: #e8e8ea;
-  --muted: #7a7a82;
-  --accent: #6c63ff;
-  --accent-dim: rgba(108,99,255,0.15);
-  --accent-border: rgba(108,99,255,0.35);
-  --green: #3ecf8e;
-  --green-dim: rgba(62,207,142,0.12);
-  --amber: #f5a623;
-  --amber-dim: rgba(245,166,35,0.12);
-  --red: #e05c5c;
-  --red-dim: rgba(224,92,92,0.12);
-  --tab-h: 64px;
-  --header-h: 56px;
-  --radius: 14px;
-  --radius-sm: 10px;
+  --bg:#0f0f11; --surface:#18181c; --surface2:#1f1f25;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --text:#e8e8ea; --muted:#7a7a82;
+  --accent:#6c63ff; --accent-dim:rgba(108,99,255,0.15); --accent-border:rgba(108,99,255,0.35);
+  --green:#3ecf8e; --green-dim:rgba(62,207,142,0.12);
+  --amber:#f5a623; --amber-dim:rgba(245,166,35,0.12);
+  --red:#e05c5c; --red-dim:rgba(224,92,92,0.12);
+  --radius:14px; --radius-sm:10px;
+  --tab-h:60px; --header-h:56px;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { height: -webkit-fill-available; }
-html, body { height: 100%; overflow: hidden; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 15px;
-  line-height: 1.5;
-}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:-webkit-fill-available}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
+.shell{display:flex;flex-direction:column;height:100dvh;min-height:-webkit-fill-available}
+.header{min-height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:max(env(safe-area-inset-top),12px) 18px 12px;flex-shrink:0}
+.header-title{font-size:17px;font-weight:500}
+.header-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.saving{background:var(--amber)}
+.sync-dot.error{background:var(--red)}
+.btn-refresh{background:var(--accent-dim);border:1px solid var(--accent-border);color:var(--accent);border-radius:8px;padding:6px 13px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 24px}
+.tabbar{height:var(--tab-h);background:var(--surface);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit;font-size:10px;font-weight:500;padding:6px 4px}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6}
+.tab.active{color:var(--accent)}
+.page{display:none}.page.active{display:block}
 
-/* ── Shell ── */
-.shell { display: flex; flex-direction: column; height: 100dvh; min-height: -webkit-fill-available; }
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px}
 
-/* ── Header ── */
-.header {
-  min-height: var(--header-h);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  padding: env(safe-area-inset-top) 18px 0;
-  padding-top: max(env(safe-area-inset-top), 12px);
-  padding-bottom: 12px;
-  flex-shrink: 0;
-  position: relative;
-}
-.header-title { font-size: 17px; font-weight: 500; }
-.header-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
-.header-action {
-  margin-left: auto;
-  background: var(--accent-dim);
-  border: 1px solid var(--accent-border);
-  color: var(--accent);
-  border-radius: 8px;
-  padding: 6px 13px;
-  font-size: 13px; font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  cursor: pointer;
-}
+/* Form */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input[type=text],input[type=date],select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:16px;padding:11px 13px;outline:none;appearance:none;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a82' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:36px}
+select option{background:#1f1f25}
+textarea{resize:none;min-height:60px;line-height:1.5}
 
-/* ── Scroll area ── */
-.scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px 16px 24px;
-}
+/* Stepper */
+.stepper{display:flex;align-items:center;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden}
+.stepper button{width:48px;height:48px;background:var(--surface2);border:none;color:var(--text);font-size:22px;cursor:pointer;font-family:inherit;flex-shrink:0}
+.stepper button:active{background:var(--border2)}
+.stepper span{flex:1;text-align:center;font-size:18px;font-family:'SF Mono',ui-monospace,monospace}
 
-/* ── Bottom tab bar ── */
-.tabbar {
-  height: var(--tab-h);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-shrink: 0;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-.tab-btn {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 3px; background: none; border: none;
-  color: var(--muted); cursor: pointer;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  font-size: 10px; font-weight: 500;
-  padding: 8px 4px;
-  transition: color 0.15s;
-}
-.tab-btn svg { width: 22px; height: 22px; }
-.tab-btn.active { color: var(--accent); }
-.tab-btn.active svg { stroke: var(--accent); }
+/* Checkboxes */
+.checks{display:flex;flex-direction:column;gap:8px}
+.chk{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;cursor:pointer}
+.chk input[type=checkbox]{width:20px;height:20px;min-width:20px;accent-color:var(--accent);cursor:pointer;padding:0;margin:0}
+.chk span{font-size:14px;color:var(--muted)}
+.chk:has(input:checked){border-color:var(--accent-border);background:var(--accent-dim)}
+.chk:has(input:checked) span{color:var(--text)}
 
-/* ── Pages ── */
-.page { display: none; }
-.page.active { display: block; }
+/* Buttons */
+.btn{font-family:inherit;font-size:15px;font-weight:500;border-radius:var(--radius-sm);padding:13px 20px;cursor:pointer;border:none;width:100%;transition:opacity 0.15s}
+.btn:active{opacity:0.75}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.btn-danger{background:transparent;border:1px solid rgba(224,92,92,0.3);color:var(--red);font-size:13px;padding:6px 12px;width:auto}
+.btn-add{width:100%;background:transparent;border:1px dashed var(--border2);color:var(--muted);font-size:14px;border-radius:var(--radius-sm);padding:13px;cursor:pointer;font-family:inherit}
+.btn-add:active{background:var(--surface2)}
 
-/* ── Cards ── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 12px;
-}
-.card-title {
-  font-size: 11px; font-weight: 500; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.08em;
-  margin-bottom: 12px;
-}
+/* Client block */
+.cblock{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.cblock-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.cblock-tag{font-size:10px;font-weight:500;color:var(--accent);background:var(--accent-dim);padding:4px 10px;border-radius:6px;text-transform:uppercase;letter-spacing:0.08em}
+.sec{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin:14px 0 8px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* ── Metrics ── */
-.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-.metric {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-}
-.metric-val { font-size: 30px; font-weight: 300; font-family: 'SF Mono', ui-monospace, monospace; }
-.metric-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.metric.hi { border-color: var(--accent-border); background: var(--accent-dim); }
-.metric.hi .metric-val { color: var(--accent); }
+/* Contact row */
+.ctrow{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px}
+.ctrow-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 
-/* ── Form ── */
-.field { margin-bottom: 14px; }
-.field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-input[type=text], input[type=date], input[type=number], select, textarea {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  font-size: 16px; /* prevents iOS zoom */
-  padding: 12px 13px;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-}
-input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a82' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px; }
-select option { background: #1f1f25; }
-textarea { resize: none; min-height: 72px; line-height: 1.5; }
-input[type=number] { -moz-appearance: textfield; }
-input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+/* History */
+.hday{border-bottom:1px solid var(--border);padding:14px 0}
+.hday:last-child{border-bottom:none}
+.hday-date{font-size:13px;font-weight:500;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:3px}
+.hday-meta{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.hclient{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px}
+.hclient-co{font-size:13px;font-weight:500;margin-bottom:4px}
+.hclient-stats{font-size:11px;color:var(--muted)}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;margin-right:3px}
+.b-spec{background:rgba(108,99,255,0.2);color:#a49cff}
+.b-follow{background:var(--amber-dim);color:var(--amber)}
+.b-response{background:var(--green-dim);color:var(--green)}
 
-/* ── Steppers ── */
-.stepper { display: flex; align-items: center; gap: 0; border: 1px solid var(--border2); border-radius: var(--radius-sm); overflow: hidden; }
-.stepper button {
-  width: 48px; height: 48px; background: var(--surface2);
-  border: none; color: var(--text); font-size: 20px;
-  cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  flex-shrink: 0;
-}
-.stepper button:active { background: var(--border2); }
-.stepper span { flex: 1; text-align: center; font-size: 18px; font-family: 'SF Mono', ui-monospace, monospace; }
+/* Metrics */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px}
+.metric-val{font-size:28px;font-weight:300;font-family:'SF Mono',ui-monospace,monospace}
+.metric-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.metric.hi{border-color:var(--accent-border);background:var(--accent-dim)}
+.metric.hi .metric-val{color:var(--accent)}
 
-/* ── Checkboxes ── */
-.checks { display: flex; flex-direction: column; gap: 10px; }
-.check-row {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 13px 14px;
-  cursor: pointer;
-}
-.check-row input[type=checkbox] {
-  width: 20px; height: 20px; min-width: 20px;
-  accent-color: var(--accent);
-  cursor: pointer;
-  padding: 0; margin: 0; border-radius: 4px;
-}
-.check-row span { font-size: 14px; color: var(--muted); }
-.check-row:has(input:checked) { border-color: var(--accent-border); background: var(--accent-dim); }
-.check-row:has(input:checked) span { color: var(--text); }
+/* Today cards */
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.tcard.target{border-left:3px solid var(--accent)}
+.tcard.followup{border-left:3px solid var(--red)}
+.tcard.followup-soon{border-left:3px solid var(--amber)}
+.tcard.responded{border-left:3px solid var(--green)}
+.pill{display:inline-block;font-size:10px;font-weight:500;padding:2px 9px;border-radius:20px}
 
-/* ── Buttons ── */
-.btn {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  font-size: 15px; font-weight: 500;
-  border-radius: var(--radius-sm);
-  padding: 14px 20px;
-  cursor: pointer; border: none;
-  width: 100%;
-  transition: opacity 0.15s;
-}
-.btn:active { opacity: 0.75; }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--muted); }
-.btn-danger { background: transparent; border: 1px solid rgba(224,92,92,0.3); color: var(--red); font-size: 13px; padding: 8px 14px; width: auto; }
-.btn-sm { font-size: 13px; padding: 9px 14px; width: auto; }
-.btn-add {
-  width: 100%; background: transparent;
-  border: 1px dashed var(--border2);
-  color: var(--muted); font-size: 14px;
-  border-radius: var(--radius-sm); padding: 13px;
-  cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-}
-.btn-add:active { background: var(--surface2); }
+/* Contacts */
+.contact-item{border-bottom:1px solid var(--border);padding:12px 0}
+.contact-item:last-child{border-bottom:none}
 
-/* ── Client block ── */
-.client-block {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 12px;
-}
-.block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.block-tag { font-size: 10px; font-weight: 500; color: var(--accent); background: var(--accent-dim); padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
-.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-/* ── Section label ── */
-.sec-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin: 16px 0 10px; }
-
-/* ── Contact rows ── */
-.contact-log-row {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  margin-bottom: 8px;
-}
-.contact-log-row .clr-name { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
-
-/* ── History ── */
-.history-day { border-bottom: 1px solid var(--border); padding: 14px 0; }
-.history-day:last-child { border-bottom: none; }
-.day-date { font-size: 14px; font-weight: 500; font-family: 'SF Mono', ui-monospace, monospace; margin-bottom: 4px; }
-.day-meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-.history-client { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 6px; }
-.hc-company { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-.hc-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
-.badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 5px; }
-.b-spec { background: rgba(108,99,255,0.2); color: #a49cff; }
-.b-follow { background: var(--amber-dim); color: var(--amber); }
-.b-response { background: var(--green-dim); color: var(--green); }
-.hc-note { font-size: 11px; color: var(--muted); font-style: italic; margin-top: 3px; }
-.hc-stats { font-size: 11px; color: var(--muted); }
-
-/* ── Recap ── */
-.week-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
-.week-label { font-size: 13px; font-weight: 500; color: var(--accent); font-family: 'SF Mono', ui-monospace, monospace; margin-bottom: 12px; }
-.week-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.wm { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 12px; }
-.wm-val { font-size: 22px; font-weight: 300; font-family: 'SF Mono', ui-monospace, monospace; }
-.wm-lbl { font-size: 10px; color: var(--muted); margin-top: 1px; }
-.rr-bar { height: 4px; background: var(--border2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
-.rr-fill { height: 100%; background: var(--accent); border-radius: 2px; }
-.client-recap-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-.client-recap-row:last-child { border-bottom: none; }
-
-/* ── Contacts ── */
-.contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
-.contact-name { font-size: 15px; font-weight: 500; margin-bottom: 2px; }
-.contact-meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-.contact-stats { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-.contact-stats strong { color: var(--text); }
-.status-pill { display: inline-block; font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
-.timeline-wrap { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
-.tl-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
-.tl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-
-/* ── Contact book ── */
-.book-contact { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.book-contact:last-child { border-bottom: none; }
-.book-co-name { font-size: 14px; font-weight: 500; }
-.book-co-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
-
-/* ── Sync modal ── */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; }
-.modal { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 20px 18px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); max-height: 85vh; overflow-y: auto; }
-.modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 18px; }
-.modal-title { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
-.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
-
-/* ── Toast ── */
-.toast {
-  position: fixed; bottom: calc(var(--tab-h) + 14px + env(safe-area-inset-bottom));
-  left: 16px; right: 16px;
-  background: var(--green-dim);
-  border: 1px solid rgba(62,207,142,0.3);
-  color: var(--green);
-  padding: 12px 16px; border-radius: var(--radius-sm);
-  font-size: 13px; display: none; z-index: 200;
-  animation: fadeup 0.2s ease;
-}
-@keyframes fadeup { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-
-.empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
-.divider { height: 1px; background: var(--border); margin: 4px 0 14px; }
-
-/* ── Today card ── */
-.today-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  margin-bottom: 10px;
-}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
+.divider{height:1px;background:var(--border);margin:4px 0 14px}
+.toast{position:fixed;bottom:calc(var(--tab-h) + 12px + env(safe-area-inset-bottom));left:16px;right:16px;background:var(--green-dim);border:1px solid rgba(62,207,142,0.3);color:var(--green);padding:12px 16px;border-radius:var(--radius-sm);font-size:13px;display:none;z-index:200;animation:fadeup 0.2s ease}
+@keyframes fadeup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
 <div class="shell">
-
-  <!-- Header -->
   <div class="header">
     <div>
-      <div class="header-title" id="page-title">Log day</div>
+      <div class="header-title" id="page-title">Today</div>
       <div class="header-sub">SAP French Market</div>
-      <div id="sync-status" style="font-size:11px;color:var(--muted);display:none;margin-top:1px"></div>
     </div>
-    <button class="header-action" onclick="loadFromSupabase()">Refresh</button>
+    <div class="header-right">
+      <div class="sync-dot" id="sync-dot"></div>
+      <button class="btn-refresh" onclick="loadData()">Refresh</button>
+    </div>
   </div>
 
-  <!-- Scroll area -->
-  <div class="scroll-area" id="scroll-area">
+  <div class="scroll" id="scroll">
 
-    <!-- TODAY PAGE -->
-    <div id="page-today" class="page">
-      <div id="today-body"></div>
+    <!-- TODAY -->
+    <div id="page-today" class="page active">
+      <div id="today-body"><div class="empty">Loading…</div></div>
     </div>
 
-    <!-- LOG PAGE -->
-    <div id="page-log" class="page active">
+    <!-- LOG -->
+    <div id="page-log" class="page">
       <div class="field">
         <label>Date</label>
         <input type="date" id="log-date">
@@ -347,754 +158,514 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
       </div>
     </div>
 
-    <!-- HISTORY PAGE -->
+    <!-- HISTORY -->
     <div id="page-history" class="page">
-      <div class="metrics" id="total-metrics">
+      <div class="metrics">
         <div class="metric"><div class="metric-val" id="m-days">0</div><div class="metric-lbl">Days logged</div></div>
         <div class="metric"><div class="metric-val" id="m-specs">0</div><div class="metric-lbl">Specs sent</div></div>
         <div class="metric"><div class="metric-val" id="m-follows">0</div><div class="metric-lbl">Follow-ups</div></div>
         <div class="metric hi"><div class="metric-val" id="m-rr">0%</div><div class="metric-lbl">Response rate</div></div>
       </div>
-      <div id="history-body"></div>
+      <div class="card" id="history-body"></div>
     </div>
 
-    <!-- RECAP PAGE -->
-    <div id="page-recap" class="page">
-      <div id="recap-body"></div>
-    </div>
-
-    <!-- CONTACTS PAGE -->
+    <!-- CONTACTS -->
     <div id="page-contacts" class="page">
-      <div id="contacts-body"></div>
-    </div>
-
-    <!-- CONTACT BOOK PAGE -->
-    <div id="page-book" class="page">
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Add new contact</div>
-        <div class="field"><label>Full name</label><input type="text" id="nb-name" placeholder="Jean Dupont" autocomplete="off"></div>
-        <div class="field"><label>Job title</label><input type="text" id="nb-title" placeholder="Head of SAP" autocomplete="off"></div>
-        <div class="field"><label>Company</label><select id="nb-company"><option value="">— Select company —</option></select></div>
-        <button class="btn btn-primary" onclick="saveContact()">Save contact</button>
-      </div>
-      <div id="book-body"></div>
+      <div class="card" id="contacts-body"></div>
     </div>
 
   </div>
 
-  <!-- Tab bar -->
   <div class="tabbar">
-    <button class="tab-btn" onclick="go('today',this)" id="tab-today">
-      <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Today
+    <button class="tab active" onclick="go('today',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Today
     </button>
-    <button class="tab-btn active" onclick="go('log',this)" id="tab-log">
-      <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-      Log
+    <button class="tab" onclick="go('log',this)">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Log
     </button>
-    <button class="tab-btn" onclick="go('history',this)" id="tab-history">
-      <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
-      History
+    <button class="tab" onclick="go('history',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>History
     </button>
-    <button class="tab-btn" onclick="go('contacts',this)" id="tab-contacts">
-      <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Contacts
-    </button>
-    <button class="tab-btn" onclick="go('book',this)" id="tab-book">
-      <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      Book
+    <button class="tab" onclick="go('contacts',this)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts
     </button>
   </div>
 </div>
 
-
-
 <div class="toast" id="toast"></div>
 
 <script>
-const CLIENTS = ["Vinci Energies","Group Pomona","JCDecaux","Galeries Lafayette","Petit Forister","Opella","MSD Animal Health","Sodexo","Groupe Avril","Mobilize Financial Services","IN Groupe","EDF","Decathlon","Sopra Steria / John Cockerill","ENGIE","TotalEnergies","Veolia","Schneider Electric","Saint-Gobain","Michelin","Safran","Bouygues Construction","Carrefour","Auchan Retail","Air France-KLM","SNCF","BNP Paribas","Société Générale","Sanofi","Ipsen","Enedis","Other"];
-const PAGE_TITLES = { today:'Today', log:'Log day', history:'History', recap:'Weekly recap', contacts:'Contacts', book:'Contact book' };
+var SB_URL = 'https://nkblbfjrwedrbrztcvcw.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rYmxiZmpyd2VkcmJyenRjdmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0OTM1NTYsImV4cCI6MjA4OTA2OTU1Nn0.asnuQM-Z6i8QDEPyrzRB_h1cPnOmUyPlwmho_L4f9JU';
+var HOT = ['Vinci Energies','Groupe Avril','EDF','Mobilize Financial Services','Saint-Gobain','Carrefour','ENGIE','TotalEnergies','Sanofi','Group Pomona','Petit Forister','MSD Animal Health','Galeries Lafayette'];
+var CLIENTS = ['Vinci Energies','Group Pomona','JCDecaux','Galeries Lafayette','Petit Forister','Opella','MSD Animal Health','Sodexo','Groupe Avril','Mobilize Financial Services','IN Groupe','EDF','Decathlon','Sopra Steria / John Cockerill','ENGIE','TotalEnergies','Veolia','Schneider Electric','Saint-Gobain','Michelin','Safran','Bouygues Construction','Carrefour','Auchan Retail','Air France-KLM','SNCF','BNP Paribas','Société Générale','Sanofi','Ipsen','Enedis','Other'];
+var TITLES = {today:'Today',log:'Log day',history:'History',contacts:'Contacts'};
 
-// ── Supabase REST (no library needed) ────────────────────────────
-const SB_URL = 'https://nkblbfjrwedrbrztcvcw.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rYmxiZmpyd2VkcmJyenRjdmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0OTM1NTYsImV4cCI6MjA4OTA2OTU1Nn0.asnuQM-Z6i8QDEPyrzRB_h1cPnOmUyPlwmho_L4f9JU';
+var data = [];
+var _saving = false;
 
-let data = [];
-let _book = [];
-let _syncing = false;
+function dot(state) {
+  var d = document.getElementById('sync-dot');
+  d.className = 'sync-dot' + (state ? ' ' + state : '');
+}
 
-function persist() { saveToSupabase(); }
-function getBook() { return _book; }
-function saveBook(b) { _book = b; saveToSupabase(); }
-
-async function sbFetch(method, body) {
-  const res = await fetch(SB_URL + '/rest/v1/bd_data?id=eq.singleton', {
-    method: method,
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + SB_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'resolution=merge-duplicates' : 'return=minimal'
-    },
-    body: body ? JSON.stringify(body) : undefined
+async function sbGet() {
+  var r = await fetch(SB_URL + '/rest/v1/bd_data?id=eq.singleton', {
+    headers: {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
   });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return method === 'GET' ? res.json() : res;
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
 }
 
-async function loadFromSupabase() {
-  showSyncStatus('Loading…');
+async function sbSave() {
+  var r = await fetch(SB_URL + '/rest/v1/bd_data?id=eq.singleton', {
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body: JSON.stringify({id:'singleton', entries:data, updated_at: new Date().toISOString()})
+  });
+  if (!r.ok) throw new Error(r.status);
+}
+
+async function loadData() {
+  dot('saving');
   try {
-    const rows = await sbFetch('GET');
-    if (rows && rows.length > 0) {
-      data = rows[0].entries || [];
-      _book = rows[0].contacts || [];
-    }
-    showSyncStatus('');
+    var rows = await sbGet();
+    if (rows && rows.length) { data = rows[0].entries || []; }
+    else { data = []; }
+    // fallback cache
+    localStorage.setItem('bd_cache', JSON.stringify(data));
+    dot('');
   } catch(e) {
-    showSyncStatus('Offline — using local cache', true);
-    try { data = JSON.parse(localStorage.getItem('bd_v1_cache') || '[]'); } catch(x) {}
-    try { _book = JSON.parse(localStorage.getItem('bd_book_cache') || '[]'); } catch(x) {}
+    dot('error');
+    try { data = JSON.parse(localStorage.getItem('bd_cache') || '[]'); } catch(x) {}
   }
-  refreshCurrentPage();
+  refreshPage();
 }
 
-async function saveToSupabase() {
-  localStorage.setItem('bd_v1_cache', JSON.stringify(data));
-  localStorage.setItem('bd_book_cache', JSON.stringify(_book));
-  if (_syncing) return;
-  _syncing = true;
-  showSyncStatus('Saving…');
+async function persist() {
+  localStorage.setItem('bd_cache', JSON.stringify(data));
+  if (_saving) return;
+  _saving = true;
+  dot('saving');
   try {
-    await sbFetch('POST', { id:'singleton', entries: data, contacts: _book, updated_at: new Date().toISOString() });
-    showSyncStatus('Saved');
-    setTimeout(() => showSyncStatus(''), 2000);
+    await sbSave();
+    dot('');
   } catch(e) {
-    showSyncStatus('Save failed', true);
+    dot('error');
+    showToast('Save failed — check connection', true);
   }
-  _syncing = false;
-}
-
-function showSyncStatus(msg, isErr) {
-  let el = document.getElementById('sync-status');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.color = isErr ? 'var(--red)' : 'var(--muted)';
-  el.style.display = msg ? 'block' : 'none';
-}
-
-function refreshCurrentPage() {
-  const active = document.querySelector('.page.active');
-  if (!active) return;
-  const id = active.id.replace('page-','');
-  // Never auto-refresh today tab — targets are locked for the day
-  // Today tab only refreshes when user explicitly navigates to it
-  if (id==='history') renderHistory();
-  else if (id==='recap') renderRecap();
-  else if (id==='contacts') renderContacts();
-  else if (id==='book') renderBook();
+  _saving = false;
 }
 
 function fmtDate(d) {
   if (!d) return '';
-  const [y,m,day] = d.split('-');
-  return `${day}/${m}/${y}`;
+  var p = d.split('-');
+  return p[2]+'/'+p[1]+'/'+p[0];
 }
 
-// ── Navigation ────────────────────────────────────────────────────
+function todayStr() {
+  var t = new Date();
+  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+}
+
+// ── Navigation ──────────────────────────────────────────────────
 function go(page, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active')});
+  document.getElementById('page-'+page).classList.add('active');
   if (btn) btn.classList.add('active');
-  document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
-  document.getElementById('scroll-area').scrollTop = 0;
-  if (page === 'history') renderHistory();
-  if (page === 'recap') renderRecap();
-  if (page === 'today') renderToday();
-  if (page === 'contacts') renderContacts();
-  if (page === 'book') renderBook();
+  document.getElementById('page-title').textContent = TITLES[page]||page;
+  document.getElementById('scroll').scrollTop = 0;
+  if (page==='history') renderHistory();
+  if (page==='contacts') renderContacts();
+  if (page==='today') renderToday();
 }
 
-// ── Log form ──────────────────────────────────────────────────────
-let blockCount = 0;
-let contactCounts = {};
-
-function contactOptsForCompany(co) {
-  const book = getBook();
-  const matches = book.filter(c => c.company === co);
-  const opts = matches.map(c => `<option value="${c.id}">${c.name}${c.title ? ' — ' + c.title : ''}</option>`).join('');
-  return `<option value="">— Select contact —</option>${opts}<option value="__new__">+ New contact</option>`;
+function refreshPage() {
+  var a = document.querySelector('.page.active');
+  if (!a) return;
+  var id = a.id.replace('page-','');
+  if (id==='history') renderHistory();
+  else if (id==='contacts') renderContacts();
+  else if (id==='today') renderToday();
 }
 
-function clientBlockHTML(n) {
-  const opts = CLIENTS.map(c => `<option>${c}</option>`).join('');
-  return `<div class="client-block" id="block-${n}">
-    <div class="block-header">
-      <span class="block-tag">Client ${n}</span>
-      ${n > 1 ? `<button class="btn btn-danger" onclick="removeBlock(${n})">Remove</button>` : ''}
-    </div>
-    <div class="field">
-      <label>Company</label>
-      <select id="co-${n}" onchange="onCompanyChange(${n})"><option value="">— Select —</option>${opts}</select>
-    </div>
-    <div class="sec-label">What happened today</div>
-    <div class="checks" style="margin-bottom:14px">
-      <label class="check-row"><input type="checkbox" id="tp-spec-${n}"><span>Fake cando spec sent</span></label>
-      <label class="check-row"><input type="checkbox" id="tp-follow-${n}"><span>Follow-up call / email</span></label>
-      <label class="check-row"><input type="checkbox" id="tp-response-${n}"><span>Response received</span></label>
-    </div>
-    <div class="g2" style="margin-bottom:14px">
-      <div class="field" style="margin:0">
-        <label>Specs sent</label>
-        <div class="stepper">
-          <button onclick="step('specs-${n}',-1)">−</button>
-          <span id="specs-${n}-disp">0</span>
-          <input type="hidden" id="specs-${n}" value="0">
-          <button onclick="step('specs-${n}',1)">+</button>
-        </div>
-      </div>
-      <div class="field" style="margin:0">
-        <label>Follow-ups</label>
-        <div class="stepper">
-          <button onclick="step('follows-${n}',-1)">−</button>
-          <span id="follows-${n}-disp">0</span>
-          <input type="hidden" id="follows-${n}" value="0">
-          <button onclick="step('follows-${n}',1)">+</button>
-        </div>
-      </div>
-    </div>
-    <div class="field" style="margin-bottom:14px">
-      <label>Responses received</label>
-      <div class="stepper">
-        <button onclick="step('responses-${n}',-1)">−</button>
-        <span id="responses-${n}-disp">0</span>
-        <input type="hidden" id="responses-${n}" value="0">
-        <button onclick="step('responses-${n}',1)">+</button>
-      </div>
-    </div>
-    <div class="field">
-      <label>Notes</label>
-      <textarea id="notes-${n}" placeholder="e.g. Sent FICO profile to SAP lead…"></textarea>
-    </div>
-    <div class="divider"></div>
-    <div class="sec-label" style="margin-top:0">Contacts</div>
-    <div id="contacts-${n}"></div>
-    <button class="btn-add" onclick="addContact(${n})">+ Add contact</button>
-  </div>`;
+// ── Log form ────────────────────────────────────────────────────
+var blockCount = 0;
+var contactCounts = {};
+
+function addBlock() {
+  if (blockCount >= 3) { showToast('Max 3 clients per day', true); return; }
+  blockCount++;
+  var n = blockCount;
+  var opts = CLIENTS.map(function(c){return '<option>'+c+'</option>'}).join('');
+  var html = '<div class="cblock" id="block-'+n+'">'
+    +'<div class="cblock-header"><span class="cblock-tag">Client '+n+'</span>'
+    +(n>1?'<button class="btn btn-danger" onclick="document.getElementById(\'block-'+n+'\').remove()">Remove</button>':'')
+    +'</div>'
+    +'<div class="field"><label>Company</label>'
+    +'<select id="co-'+n+'"><option value="">— Select —</option>'+opts+'</select></div>'
+    +'<div class="sec">What happened</div>'
+    +'<div class="checks" style="margin-bottom:14px">'
+    +'<label class="chk"><input type="checkbox" id="tp-spec-'+n+'"><span>Spec sent</span></label>'
+    +'<label class="chk"><input type="checkbox" id="tp-follow-'+n+'"><span>Follow-up sent</span></label>'
+    +'<label class="chk"><input type="checkbox" id="tp-response-'+n+'"><span>Response received</span></label>'
+    +'</div>'
+    +'<div class="g2" style="margin-bottom:14px">'
+    +'<div class="field" style="margin:0"><label>Specs sent</label>'
+    +'<div class="stepper"><button onclick="step(\'specs-'+n+'\',-1)">−</button><span id="specs-'+n+'-v">0</span><input type="hidden" id="specs-'+n+'" value="0"><button onclick="step(\'specs-'+n+'\',1)">+</button></div></div>'
+    +'<div class="field" style="margin:0"><label>Follow-ups</label>'
+    +'<div class="stepper"><button onclick="step(\'follows-'+n+'\',-1)">−</button><span id="follows-'+n+'-v">0</span><input type="hidden" id="follows-'+n+'" value="0"><button onclick="step(\'follows-'+n+'\',1)">+</button></div></div>'
+    +'</div>'
+    +'<div class="field" style="margin-bottom:14px"><label>Responses received</label>'
+    +'<div class="stepper"><button onclick="step(\'responses-'+n+'\',-1)">−</button><span id="responses-'+n+'-v">0</span><input type="hidden" id="responses-'+n+'" value="0"><button onclick="step(\'responses-'+n+'\',1)">+</button></div></div>'
+    +'<div class="divider"></div>'
+    +'<div class="sec" style="margin-top:0">Contacts</div>'
+    +'<div id="ctrows-'+n+'"></div>'
+    +'<button class="btn-add" style="margin-bottom:14px" onclick="addContact('+n+')">+ Add contact</button>'
+    +'<div class="field" style="margin-bottom:0"><label>Notes</label>'
+    +'<textarea id="notes-'+n+'" placeholder="e.g. Sent FICO profile to SAP lead…"></textarea></div>'
+    +'</div>';
+  document.getElementById('blocks').insertAdjacentHTML('beforeend', html);
 }
 
 function step(id, delta) {
-  const inp = document.getElementById(id);
-  const disp = document.getElementById(id + '-disp');
-  const v = Math.max(0, (parseInt(inp.value) || 0) + delta);
+  var inp = document.getElementById(id);
+  var disp = document.getElementById(id+'-v');
+  var v = Math.max(0, (parseInt(inp.value)||0) + delta);
   inp.value = v;
   disp.textContent = v;
 }
 
-function addBlock() {
-  if (blockCount >= 3) { showToast('Max 3 clients per day.', true); return; }
-  blockCount++;
-  document.getElementById('blocks').insertAdjacentHTML('beforeend', clientBlockHTML(blockCount));
-}
-
-function removeBlock(n) { document.getElementById('block-' + n).remove(); }
-function resetForm() { document.getElementById('blocks').innerHTML = ''; blockCount = 0; contactCounts = {}; addBlock(); }
-
-function onCompanyChange(n) {
-  // refresh any existing contact dropdowns for this block
-  const container = document.getElementById('contacts-' + n);
-  container.querySelectorAll('.contact-co-sel').forEach(sel => {
-    const co = document.getElementById('co-' + n)?.value || '';
-    const cur = sel.value;
-    sel.innerHTML = contactOptsForCompany(co);
-    if (cur) sel.value = cur;
-  });
-}
-
-function addContact(blockN) {
-  if (!contactCounts[blockN]) contactCounts[blockN] = 0;
-  contactCounts[blockN]++;
-  const cIdx = contactCounts[blockN];
-  const id = `c-${blockN}-${cIdx}`;
-  const co = document.getElementById(`co-${blockN}`)?.value || '';
-  const html = `<div class="contact-log-row" id="${id}">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:12px;color:var(--muted)">Contact ${cIdx}</span>
-      <button class="btn btn-danger" onclick="document.getElementById('${id}').remove()">Remove</button>
-    </div>
-    <div class="field" style="margin-bottom:8px">
-      <label>Select contact</label>
-      <select class="contact-co-sel" id="${id}-sel" onchange="handleContactSel('${id}',${blockN})">${contactOptsForCompany(co)}</select>
-    </div>
-    <div id="${id}-newrow" style="display:none">
-      <div class="field" style="margin-bottom:8px"><label>Full name</label><input type="text" id="${id}-newname" placeholder="Jean Dupont"></div>
-      <div class="field" style="margin-bottom:8px"><label>Job title</label><input type="text" id="${id}-newtitle" placeholder="Head of SAP"></div>
-    </div>
-    <div class="field" style="margin-bottom:0">
-      <label>Touchpoint type</label>
-      <select id="${id}-tp">
-        <option value="spec">Spec sent</option>
-        <option value="follow">Follow-up</option>
-        <option value="response">Response received</option>
-      </select>
-    </div>
-  </div>`;
-  document.getElementById(`contacts-${blockN}`).insertAdjacentHTML('beforeend', html);
-}
-
-function handleContactSel(id, blockN) {
-  const v = document.getElementById(`${id}-sel`).value;
-  document.getElementById(`${id}-newrow`).style.display = v === '__new__' ? 'block' : 'none';
-}
-
-function readContacts(blockN) {
-  const container = document.getElementById(`contacts-${blockN}`);
-  if (!container) return [];
-  const result = [];
-  const book = getBook();
-  Array.from(container.children).forEach(row => {
-    const id = row.id; if (!id) return;
-    const sel = document.getElementById(`${id}-sel`)?.value;
-    const tp = document.getElementById(`${id}-tp`)?.value || 'spec';
-    if (!sel) return;
-    if (sel === '__new__') {
-      const name = document.getElementById(`${id}-newname`)?.value?.trim();
-      const title = document.getElementById(`${id}-newtitle`)?.value?.trim();
-      if (!name) return;
-      const co = document.getElementById(`co-${blockN}`)?.value || '';
-      const newId = 'c_' + Date.now() + Math.random().toString(36).slice(2,6);
-      const nb = getBook();
-      if (!nb.find(c => c.name.toLowerCase() === name.toLowerCase() && c.company === co)) {
-        nb.push({ id: newId, name, title: title||'', company: co });
-        saveBook(nb);
-      }
-      result.push({ contactId: newId, name, title: title||'', touchType: tp });
-    } else {
-      const c = book.find(b => b.id === sel);
-      if (c) result.push({ contactId: c.id, name: c.name, title: c.title||'', touchType: tp });
-    }
-  });
-  return result;
+function addContact(n) {
+  if (!contactCounts[n]) contactCounts[n] = 0;
+  contactCounts[n]++;
+  var ci = contactCounts[n];
+  var id = 'ct-'+n+'-'+ci;
+  var html = '<div class="ctrow" id="'+id+'">'
+    +'<div class="ctrow-top"><span style="font-size:12px;color:var(--muted)">Contact '+ci+'</span>'
+    +'<button class="btn btn-danger" onclick="document.getElementById(\''+id+'\').remove()">Remove</button></div>'
+    +'<div class="g2" style="margin-bottom:8px">'
+    +'<div class="field" style="margin:0"><label>Name</label><input type="text" id="'+id+'-name" placeholder="Jean Dupont"></div>'
+    +'<div class="field" style="margin:0"><label>Job title</label><input type="text" id="'+id+'-title" placeholder="Head of SAP"></div>'
+    +'</div>'
+    +'<div class="field" style="margin:0"><label>Touchpoint</label>'
+    +'<select id="'+id+'-tp"><option value="spec">Spec sent</option><option value="follow">Follow-up</option><option value="response">Response received</option></select>'
+    +'</div></div>';
+  document.getElementById('ctrows-'+n).insertAdjacentHTML('beforeend', html);
 }
 
 function readBlocks() {
-  const result = [];
-  for (let i = 1; i <= blockCount; i++) {
-    const el = document.getElementById('block-' + i);
+  var result = [];
+  for (var i = 1; i <= blockCount; i++) {
+    var el = document.getElementById('block-'+i);
     if (!el) continue;
-    const co = document.getElementById('co-' + i)?.value;
+    var co = document.getElementById('co-'+i).value;
     if (!co) continue;
+    var contacts = [];
+    var ctContainer = document.getElementById('ctrows-'+i);
+    if (ctContainer) {
+      Array.from(ctContainer.children).forEach(function(row) {
+        var id = row.id;
+        var name = (document.getElementById(id+'-name')||{}).value||'';
+        name = name.trim();
+        if (!name) return;
+        contacts.push({
+          name: name,
+          title: ((document.getElementById(id+'-title')||{}).value||'').trim(),
+          touchType: (document.getElementById(id+'-tp')||{}).value||'spec',
+          date: document.getElementById('log-date').value
+        });
+      });
+    }
     result.push({
       company: co,
-      tpSpec: document.getElementById('tp-spec-'+i)?.checked||false,
-      tpFollow: document.getElementById('tp-follow-'+i)?.checked||false,
-      tpResponse: document.getElementById('tp-response-'+i)?.checked||false,
-      specs: parseInt(document.getElementById('specs-'+i)?.value)||0,
-      follows: parseInt(document.getElementById('follows-'+i)?.value)||0,
-      responses: parseInt(document.getElementById('responses-'+i)?.value)||0,
-      notes: document.getElementById('notes-'+i)?.value||'',
-      contacts: readContacts(i)
+      tpSpec: document.getElementById('tp-spec-'+i).checked,
+      tpFollow: document.getElementById('tp-follow-'+i).checked,
+      tpResponse: document.getElementById('tp-response-'+i).checked,
+      specs: parseInt(document.getElementById('specs-'+i).value)||0,
+      follows: parseInt(document.getElementById('follows-'+i).value)||0,
+      responses: parseInt(document.getElementById('responses-'+i).value)||0,
+      notes: (document.getElementById('notes-'+i)||{}).value||'',
+      contacts: contacts
     });
   }
   return result;
 }
 
+function resetForm() {
+  document.getElementById('blocks').innerHTML = '';
+  blockCount = 0;
+  contactCounts = {};
+  addBlock();
+}
+
 function saveDay() {
-  const date = document.getElementById('log-date').value;
-  if (!date) { showToast('Please set a date.', true); return; }
-  const clients = readBlocks();
-  if (!clients.length) { showToast('Select at least one client.', true); return; }
-  data = data.filter(e => e.date !== date);
-  data.push({ date, clients });
-  data.sort((a,b) => b.date.localeCompare(a.date));
+  var date = document.getElementById('log-date').value;
+  if (!date) { showToast('Please set a date', true); return; }
+  var blocks = readBlocks();
+  if (!blocks.length) { showToast('Select at least one client', true); return; }
+
+  // Find existing entry for this date
+  var entryIdx = -1;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].date === date) { entryIdx = i; break; }
+  }
+
+  if (entryIdx === -1) {
+    // New day entry
+    data.unshift({ date: date, clients: blocks });
+  } else {
+    // Merge into existing day — update or add per company
+    blocks.forEach(function(newClient) {
+      var existing = data[entryIdx].clients;
+      var coIdx = -1;
+      for (var j = 0; j < existing.length; j++) {
+        if (existing[j].company === newClient.company) { coIdx = j; break; }
+      }
+      if (coIdx === -1) {
+        // New company for this day — just add
+        existing.push(newClient);
+      } else {
+        // Same company — merge: add counts, merge contacts, update flags
+        existing[coIdx].specs += newClient.specs;
+        existing[coIdx].follows += newClient.follows;
+        existing[coIdx].responses += newClient.responses;
+        if (newClient.tpSpec) existing[coIdx].tpSpec = true;
+        if (newClient.tpFollow) existing[coIdx].tpFollow = true;
+        if (newClient.tpResponse) existing[coIdx].tpResponse = true;
+        if (newClient.notes) existing[coIdx].notes = (existing[coIdx].notes ? existing[coIdx].notes + ' | ' : '') + newClient.notes;
+        existing[coIdx].contacts = (existing[coIdx].contacts||[]).concat(newClient.contacts);
+      }
+    });
+  }
+
   persist();
-  showToast('Day saved.');
+  showToast('Saved');
   resetForm();
 }
 
-// ── History ───────────────────────────────────────────────────────
-function renderHistory() {
-  updateMetrics();
-  const body = document.getElementById('history-body');
-  if (!data.length) { body.innerHTML = '<div class="empty">No entries yet.</div>'; return; }
-  body.innerHTML = data.map(entry => {
-    const tots = entry.clients.reduce((a,c) => ({ specs:a.specs+c.specs, follows:a.follows+c.follows, responses:a.responses+c.responses }), {specs:0,follows:0,responses:0});
-    const rows = entry.clients.map(c => {
-      let badges = '';
-      if (c.tpSpec) badges += `<span class="badge b-spec">spec</span>`;
-      if (c.tpFollow) badges += `<span class="badge b-follow">follow-up</span>`;
-      if (c.tpResponse) badges += `<span class="badge b-response">response</span>`;
-      const contacts = (c.contacts||[]).map(ct => `<span style="font-size:11px;color:var(--muted)">${ct.name}</span>`).join(', ');
-      return `<div class="history-client">
-        <div class="hc-company">${c.company}</div>
-        <div class="hc-badges">${badges}</div>
-        <div class="hc-stats">${c.specs} specs · ${c.follows} follow-ups · ${c.responses} responses</div>
-        ${contacts ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">${contacts}</div>` : ''}
-        ${c.notes ? `<div class="hc-note">${c.notes}</div>` : ''}
-      </div>`;
-    }).join('');
-    return `<div class="history-day">
-      <div class="day-date">${fmtDate(entry.date)}</div>
-      <div class="day-meta">${tots.specs} specs · ${tots.follows} follow-ups · ${tots.responses} responses
-        <button class="btn btn-danger" style="margin-left:10px;padding:3px 8px;font-size:11px" onclick="deleteEntry('${entry.date}')">Delete</button>
-      </div>
-      ${rows}
-    </div>`;
-  }).join('');
-}
-
-function deleteEntry(date) {
-  if (!confirm('Delete ' + fmtDate(date) + '?')) return;
-  data = data.filter(e => e.date !== date); persist(); renderHistory();
-}
-
-function updateMetrics() {
-  const all = data.flatMap(e => e.clients);
-  const specs = all.reduce((s,c)=>s+c.specs,0);
-  const follows = all.reduce((s,c)=>s+c.follows,0);
-  const responses = all.reduce((s,c)=>s+c.responses,0);
-  const t = specs + follows;
-  const rr = t > 0 ? Math.round((responses/t)*100) : 0;
-  document.getElementById('m-days').textContent = data.length;
-  document.getElementById('m-specs').textContent = specs;
-  document.getElementById('m-follows').textContent = follows;
-  document.getElementById('m-rr').textContent = rr + '%';
-}
-
-// ── Recap ─────────────────────────────────────────────────────────
-function weekKey(ds) {
-  const d = new Date(ds); const day = d.getDay()||7;
-  const mon = new Date(d); mon.setDate(d.getDate()-day+1);
-  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-  return fmtDate(mon.toISOString().split('T')[0]) + ' – ' + fmtDate(sun.toISOString().split('T')[0]);
-}
-
-function renderRecap() {
-  const body = document.getElementById('recap-body');
-  if (!data.length) { body.innerHTML = '<div class="empty">No entries yet.</div>'; return; }
-  const weeks = {};
-  data.forEach(entry => {
-    const wk = weekKey(entry.date);
-    if (!weeks[wk]) weeks[wk] = { label:wk, days:0, clientMap:{}, specs:0, follows:0, responses:0 };
-    const w = weeks[wk]; w.days++;
-    entry.clients.forEach(c => {
-      if (!w.clientMap[c.company]) w.clientMap[c.company] = { specs:0, follows:0, responses:0 };
-      w.clientMap[c.company].specs += c.specs;
-      w.clientMap[c.company].follows += c.follows;
-      w.clientMap[c.company].responses += c.responses;
-      w.specs+=c.specs; w.follows+=c.follows; w.responses+=c.responses;
-    });
-  });
-  body.innerHTML = Object.entries(weeks).map(([wk,w]) => {
-    const t = w.specs+w.follows;
-    const rr = t > 0 ? Math.round((w.responses/t)*100) : 0;
-    const clientRows = Object.entries(w.clientMap).map(([co,s]) => {
-      const ct = s.specs+s.follows;
-      const crr = ct > 0 ? Math.round((s.responses/ct)*100) : 0;
-      return `<div class="client-recap-row">
-        <span style="font-weight:500">${co}</span>
-        <span style="color:var(--muted);font-size:12px">${s.specs} specs · ${s.follows} f/u · ${crr}% resp</span>
-      </div>`;
-    }).join('');
-    const names = Object.keys(w.clientMap).join(', ');
-    const copyTxt = `Week ${w.label}: ${w.days} days | Specs: ${w.specs} | Follow-ups: ${w.follows} | Responses: ${w.responses} | Response rate: ${rr}% | Clients: ${names}`;
-    return `<div class="week-card">
-      <div class="week-label">W/C ${w.label}</div>
-      <div class="week-metrics">
-        <div class="wm"><div class="wm-val">${w.specs}</div><div class="wm-lbl">Specs</div></div>
-        <div class="wm"><div class="wm-val">${w.follows}</div><div class="wm-lbl">Follow-ups</div></div>
-        <div class="wm"><div class="wm-val">${w.responses}</div><div class="wm-lbl">Responses</div></div>
-        <div class="wm">
-          <div class="wm-val" style="color:var(--accent)">${rr}%</div>
-          <div class="wm-lbl">Resp. rate</div>
-          <div class="rr-bar"><div class="rr-fill" style="width:${rr}%"></div></div>
-        </div>
-      </div>
-      <div style="margin-bottom:12px">${clientRows}</div>
-      <button class="btn btn-ghost" style="font-size:13px;padding:10px" onclick="openCopyRecap('${copyTxt.replace(/'/g,"\\'")}')">Copy recap text</button>
-    </div>`;
-  }).join('');
-}
-
-function openCopyRecap(text) {
-  openShowModal('Week recap', 'Select all below (tap and hold → Select All), then copy and paste into Claude for analysis.', text, false);
-}
-
-// ── Contacts ──────────────────────────────────────────────────────
-function renderContacts() {
-  const body = document.getElementById('contacts-body');
-  const today = new Date(); today.setHours(0,0,0,0);
-  const map = {};
-  data.forEach(entry => {
-    const ed = new Date(entry.date); ed.setHours(0,0,0,0);
-    const ds = Math.round((today - ed)/86400000);
-    entry.clients.forEach(c => {
-      (c.contacts||[]).forEach(ct => {
-        const key = ct.contactId || ct.name;
-        if (!map[key]) map[key] = { name:ct.name, title:ct.title||'', company:c.company, lastDate:entry.date, daysSince:ds, specs:0, follows:0, responses:0, timeline:[] };
-        const tp = ct.touchType||'spec';
-        if (tp==='spec') map[key].specs++;
-        else if (tp==='follow') map[key].follows++;
-        else if (tp==='response') map[key].responses++;
-        map[key].timeline.push({ date:entry.date, tp });
-        if (entry.date >= map[key].lastDate) { map[key].lastDate = entry.date; map[key].daysSince = ds; }
-      });
-    });
-  });
-  const contacts = Object.values(map).sort((a,b) => {
-    if (a.responses>0 && b.responses===0) return 1;
-    if (b.responses>0 && a.responses===0) return -1;
-    return b.daysSince - a.daysSince;
-  });
-  if (!contacts.length) { body.innerHTML = '<div class="empty">No contacts logged yet.<br>Add names when logging a day.</div>'; return; }
-  const tpLabel = { spec:'Spec sent', follow:'Follow-up', response:'Response' };
-  const tpCol = { spec:'var(--accent)', follow:'var(--amber)', response:'var(--green)' };
-  body.innerHTML = contacts.map(ct => {
-    let status, sBg, sCol;
-    if (ct.responses>0) { status='Responded'; sBg='var(--green-dim)'; sCol='var(--green)'; }
-    else if (ct.daysSince>=5) { status=`Follow up now (${ct.daysSince}d)`; sBg='var(--red-dim)'; sCol='var(--red)'; }
-    else if (ct.daysSince>=3) { status=`Follow up soon (${ct.daysSince}d)`; sBg='var(--amber-dim)'; sCol='var(--amber)'; }
-    else { status=`Sent ${ct.daysSince}d ago`; sBg='rgba(255,255,255,0.05)'; sCol='var(--muted)'; }
-    const tl = ct.timeline.sort((a,b)=>a.date.localeCompare(b.date)).map(t =>
-      `<div class="tl-item"><div class="tl-dot" style="background:${tpCol[t.tp]||'var(--muted)'}"></div><span>${fmtDate(t.date)} · ${tpLabel[t.tp]||t.tp}</span></div>`
-    ).join('');
-    return `<div class="contact-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-        <div class="contact-name">${ct.name}</div>
-        <span class="status-pill" style="background:${sBg};color:${sCol}">${status}</span>
-      </div>
-      <div class="contact-meta">${ct.title||'—'} · ${ct.company}</div>
-      <div class="contact-stats">
-        <span>Specs <strong>${ct.specs}</strong></span>
-        <span>Follow-ups <strong>${ct.follows}</strong></span>
-        <span>Responses <strong>${ct.responses}</strong></span>
-      </div>
-      <div class="timeline-wrap">${tl}</div>
-    </div>`;
-  }).join('');
-}
-
-// ── Contact book ──────────────────────────────────────────────────
-function saveContact() {
-  const name = document.getElementById('nb-name').value.trim();
-  const title = document.getElementById('nb-title').value.trim();
-  const co = document.getElementById('nb-company').value;
-  if (!name) { showToast('Please enter a name.', true); return; }
-  if (!co) { showToast('Please select a company.', true); return; }
-  const book = getBook();
-  if (book.find(c => c.name.toLowerCase()===name.toLowerCase() && c.company===co)) { showToast('Contact already exists.', true); return; }
-  book.push({ id:'c_'+Date.now()+Math.random().toString(36).slice(2,6), name, title, company:co });
-  saveBook(book);
-  document.getElementById('nb-name').value='';
-  document.getElementById('nb-title').value='';
-  showToast(name + ' saved.');
-  renderBook();
-}
-
-function deleteContact(id) {
-  if (!confirm('Remove this contact?')) return;
-  saveBook(getBook().filter(c=>c.id!==id)); renderBook();
-}
-
-function renderBook() {
-  const sel = document.getElementById('nb-company');
-  if (sel) sel.innerHTML = '<option value="">— Select company —</option>' + CLIENTS.map(c=>`<option>${c}</option>`).join('');
-  const book = getBook();
-  const body = document.getElementById('book-body');
-  if (!body) return;
-  if (!book.length) { body.innerHTML = '<div class="empty">No contacts saved yet.</div>'; return; }
-  const byComp = {};
-  book.forEach(c => { if (!byComp[c.company]) byComp[c.company]=[]; byComp[c.company].push(c); });
-  body.innerHTML = Object.entries(byComp).map(([co,cts]) =>
-    `<div class="card">
-      <div class="card-title">${co}</div>
-      ${cts.map(c => `<div class="book-contact">
-        <div><div class="book-co-name">${c.name}</div><div class="book-co-sub">${c.title||'—'}</div></div>
-        <button class="btn btn-danger" onclick="deleteContact('${c.id}')">Remove</button>
-      </div>`).join('')}
-    </div>`
-  ).join('');
-}
-
-// ── Sync modal ────────────────────────────────────────────────────
-// sync via Supabase — no manual backup needed
-
-// sync handled by Supabase
-
-// ── Toast ─────────────────────────────────────────────────────────
-function showToast(msg, isError) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.background = isError ? 'var(--red-dim)' : 'var(--green-dim)';
-  t.style.borderColor = isError ? 'rgba(224,92,92,0.3)' : 'rgba(62,207,142,0.3)';
-  t.style.color = isError ? 'var(--red)' : 'var(--green)';
-  t.style.display = 'block';
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.style.display = 'none', 3000);
-}
-
-// ── Hot clients (tier 1 — key intel, known active demand) ────────
-const HOT_CLIENTS = [
-  "Vinci Energies","Groupe Avril","EDF","Mobilize Financial Services",
-  "Saint-Gobain","Carrefour","ENGIE","TotalEnergies","Sanofi",
-  "Group Pomona","Petit Forister","MSD Animal Health","Galeries Lafayette"
-];
-
-// ── Today tab ─────────────────────────────────────────────────────
-// Targets are calculated ONCE per day using date as seed — never change mid-day
+// ── Today ───────────────────────────────────────────────────────
 function getDailyTargets() {
-  var today = new Date();
-  var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  var KEY = 'bd_targets_v2';
-  // Return cached if same day
+  var ts = todayStr();
+  var KEY = 'bd_targets_v3';
   try {
-    var stored = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (stored && stored.date === todayStr) { return stored.targets; }
+    var s = JSON.parse(localStorage.getItem(KEY)||'null');
+    if (s && s.date === ts) return s.targets;
   } catch(e) {}
   // Build last-contacted map
-  var lastContact = {};
-  data.forEach(function(entry) {
-    entry.clients.forEach(function(c) {
-      if (!lastContact[c.company] || entry.date > lastContact[c.company]) {
-        lastContact[c.company] = entry.date;
-      }
+  var last = {};
+  data.forEach(function(e) {
+    e.clients.forEach(function(c) {
+      if (!last[c.company] || e.date > last[c.company]) last[c.company] = e.date;
     });
   });
-  // Score: hot tier first, then by days since last contact (never contacted = highest)
-  var allClients = CLIENTS.filter(function(c) { return c !== 'Other'; });
-  var todayMs = new Date(todayStr).getTime();
-  var scored = allClients.map(function(co) {
-    var lc = lastContact[co];
-    var daysSince = lc ? Math.round((todayMs - new Date(lc).getTime()) / 86400000) : 999;
-    var isHot = HOT_CLIENTS.indexOf(co) >= 0;
-    var score = (isHot ? 200 : 0) + Math.min(daysSince, 90);
-    return { co: co, daysSince: daysSince, isHot: isHot, lastDate: lc || null, score: score };
+  // Score
+  var todayMs = new Date(ts).getTime();
+  var scored = CLIENTS.filter(function(c){return c!=='Other'}).map(function(co) {
+    var lc = last[co];
+    var ds = lc ? Math.round((todayMs - new Date(lc).getTime())/86400000) : 999;
+    var hot = HOT.indexOf(co) >= 0;
+    return { co:co, ds:ds, hot:hot, lc:lc, score:(hot?200:0)+Math.min(ds,90) };
   });
-  scored.sort(function(a,b) { return b.score - a.score; });
-  var targets = scored.slice(0, 3);
-  // Lock for today
-  try { localStorage.setItem(KEY, JSON.stringify({ date: todayStr, targets: targets })); } catch(e) {}
+  scored.sort(function(a,b){return b.score-a.score});
+  var targets = scored.slice(0,3);
+  try { localStorage.setItem(KEY, JSON.stringify({date:ts, targets:targets})); } catch(e) {}
   return targets;
 }
 
 function renderToday() {
   var body = document.getElementById('today-body');
-  var today = new Date();
-  today.setHours(0,0,0,0);
-  var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  var dayName = today.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+  var ts = todayStr();
+  var t = new Date(); t.setHours(0,0,0,0);
+  var dayName = t.toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long'});
 
-  // Get locked targets — will NOT change until tomorrow
   var targets = getDailyTargets();
 
-  // Build follow-up list from named contacts
-  var contactMap = {};
+  // Build contact follow-up map
+  var ctMap = {};
   data.forEach(function(entry) {
     var ed = new Date(entry.date); ed.setHours(0,0,0,0);
-    var ds = Math.round((today - ed) / 86400000);
+    var ds = Math.round((t - ed)/86400000);
     entry.clients.forEach(function(c) {
       (c.contacts||[]).forEach(function(ct) {
-        var key = ct.contactId || ct.name;
-        if (!contactMap[key]) {
-          contactMap[key] = { name:ct.name, title:ct.title||'', company:c.company, lastDate:entry.date, daysSince:ds, responded:false };
-        }
-        if (ct.touchType === 'response') { contactMap[key].responded = true; }
-        if (entry.date >= contactMap[key].lastDate) {
-          contactMap[key].lastDate = entry.date;
-          contactMap[key].daysSince = ds;
-        }
+        var key = ct.name+'||'+c.company;
+        if (!ctMap[key]) ctMap[key] = {name:ct.name,title:ct.title||'',company:c.company,lastDate:entry.date,ds:ds,responded:false};
+        if (ct.touchType==='response') ctMap[key].responded = true;
+        if (entry.date >= ctMap[key].lastDate) { ctMap[key].lastDate=entry.date; ctMap[key].ds=ds; }
       });
     });
   });
 
-  var followUps = Object.values(contactMap)
-    .filter(function(c) { return !c.responded && c.daysSince >= 3; })
-    .sort(function(a,b) { return b.daysSince - a.daysSince; });
+  var followUps = Object.values(ctMap).filter(function(c){return !c.responded && c.ds>=3}).sort(function(a,b){return b.ds-a.ds});
+  var respondedList = Object.values(ctMap).filter(function(c){return c.responded});
 
-  var responded = Object.values(contactMap)
-    .filter(function(c) { return c.responded; })
-    .slice(0, 5);
+  var html = '<div style="font-size:13px;color:var(--muted);margin-bottom:18px">'+dayName+'</div>';
 
-  // ── Render ────────────────────────────────────────────────────
-  var html = '<div style="font-size:13px;color:var(--muted);margin-bottom:20px;">' + dayName + '</div>';
-
-  // Section: Spec targets — FIXED for today
+  // Spec targets
   html += '<div style="font-size:11px;font-weight:500;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Spec targets today</div>';
   targets.forEach(function(t, i) {
-    var badge = t.isHot ? 'Hot tier' : (t.daysSince === 999 ? 'Never contacted' : t.daysSince + 'd since last');
-    var badgeBg = t.isHot ? 'var(--accent-dim)' : 'var(--amber-dim)';
-    var badgeCol = t.isHot ? 'var(--accent)' : 'var(--amber)';
-    var sub = t.isHot ? 'Active programme — keep momentum' : (t.daysSince === 999 ? 'Never spec'd — start today' : 'Not contacted in ' + t.daysSince + ' days');
-    html += '<div class="today-card" style="border-left:3px solid var(--accent);margin-bottom:10px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-      + '<div style="font-size:10px;color:var(--muted)">Target ' + (i+1) + '</div>'
-      + '<span style="font-size:10px;font-weight:500;background:' + badgeBg + ';color:' + badgeCol + ';padding:2px 8px;border-radius:20px">' + badge + '</span>'
-      + '</div>'
-      + '<div style="font-weight:500;font-size:16px;margin-bottom:4px">' + t.co + '</div>'
-      + '<div style="font-size:12px;color:var(--muted)">' + sub + '</div>'
-      + '</div>';
+    var badge = t.hot ? 'Hot tier' : (t.ds===999 ? 'Never contacted' : t.ds+'d since last');
+    var badgeBg = t.hot ? 'var(--accent-dim)' : 'var(--amber-dim)';
+    var badgeCol = t.hot ? 'var(--accent)' : 'var(--amber)';
+    var sub = t.hot ? 'Active programme — keep momentum' : (t.ds===999 ? 'Never spec\'d — start today' : 'Not contacted in '+t.ds+' days');
+    html += '<div class="tcard target">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">'
+      +'<span style="font-size:10px;color:var(--muted)">Target '+(i+1)+'</span>'
+      +'<span class="pill" style="background:'+badgeBg+';color:'+badgeCol+'">'+badge+'</span>'
+      +'</div>'
+      +'<div style="font-weight:500;font-size:16px;margin-bottom:3px">'+t.co+'</div>'
+      +'<div style="font-size:12px;color:var(--muted)">'+sub+'</div>'
+      +'</div>';
   });
 
-  // Section: Follow-ups
+  // Follow-ups
   if (followUps.length) {
-    html += '<div style="font-size:11px;font-weight:500;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin:20px 0 10px">Send follow-ups (' + followUps.length + ')</div>';
+    html += '<div style="font-size:11px;font-weight:500;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 10px">Send follow-ups ('+followUps.length+')</div>';
     followUps.forEach(function(c) {
-      var col = c.daysSince >= 5 ? 'var(--red)' : 'var(--amber)';
-      var bg = c.daysSince >= 5 ? 'var(--red-dim)' : 'var(--amber-dim)';
-      html += '<div class="today-card" style="border-left:3px solid ' + col + ';margin-bottom:8px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-        + '<div>'
-        + '<div style="font-weight:500;font-size:15px">' + c.name + '</div>'
-        + '<div style="font-size:12px;color:var(--muted);margin-top:2px">' + (c.title ? c.title + ' · ' : '') + c.company + '</div>'
-        + '</div>'
-        + '<span style="font-size:11px;font-weight:500;background:' + bg + ';color:' + col + ';padding:3px 9px;border-radius:20px;white-space:nowrap;margin-left:8px">' + c.daysSince + 'd ago</span>'
-        + '</div>'
-        + '<div style="font-size:12px;color:var(--muted);margin-top:6px">Spec sent ' + fmtDate(c.lastDate) + ' — no response yet</div>'
-        + '</div>';
+      var urgent = c.ds >= 5;
+      var col = urgent ? 'var(--red)' : 'var(--amber)';
+      var bg = urgent ? 'var(--red-dim)' : 'var(--amber-dim)';
+      html += '<div class="tcard '+(urgent?'followup':'followup-soon')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<div><div style="font-weight:500;font-size:15px">'+c.name+'</div>'
+        +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+(c.title?c.title+' · ':'')+c.company+'</div></div>'
+        +'<span class="pill" style="background:'+bg+';color:'+col+';white-space:nowrap;margin-left:8px">'+c.ds+'d ago</span>'
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--muted);margin-top:6px">Spec sent '+fmtDate(c.lastDate)+' — no response yet</div>'
+        +'</div>';
     });
   }
 
-  // Section: Responded
-  if (responded.length) {
-    html += '<div style="font-size:11px;font-weight:500;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin:20px 0 10px">Responded — progress these</div>';
-    responded.forEach(function(c) {
-      html += '<div class="today-card" style="border-left:3px solid var(--green);margin-bottom:8px">'
-        + '<div style="font-weight:500;font-size:15px">' + c.name + '</div>'
-        + '<div style="font-size:12px;color:var(--muted);margin-top:2px">' + (c.title ? c.title + ' · ' : '') + c.company + '</div>'
-        + '<div style="font-size:12px;color:var(--green);margin-top:6px">Responded ' + fmtDate(c.lastDate) + '</div>'
-        + '</div>';
+  // Responded
+  if (respondedList.length) {
+    html += '<div style="font-size:11px;font-weight:500;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 10px">Responded — progress these</div>';
+    respondedList.forEach(function(c) {
+      html += '<div class="tcard responded">'
+        +'<div style="font-weight:500;font-size:15px">'+c.name+'</div>'
+        +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+(c.title?c.title+' · ':'')+c.company+'</div>'
+        +'<div style="font-size:12px;color:var(--green);margin-top:6px">Responded '+fmtDate(c.lastDate)+'</div>'
+        +'</div>';
     });
   }
 
-  if (!followUps.length && !responded.length) {
-    html += '<div style="font-size:13px;color:var(--muted);margin-top:20px;padding:16px;background:var(--surface);border-radius:var(--radius-sm)">No follow-ups due yet — keep logging your specs and contacts will appear here.</div>';
+  if (!followUps.length && !respondedList.length && data.length === 0) {
+    html += '<div style="font-size:13px;color:var(--muted);margin-top:16px;background:var(--surface);border-radius:var(--radius-sm);padding:14px">Start logging your days and follow-up alerts will appear here automatically.</div>';
   }
 
   body.innerHTML = html;
 }
 
-function preSelectClient(company) {
-  // Auto-select the company in the first client block
-  const sel = document.getElementById('co-1');
-  if (sel) { sel.value = company; onCompanyChange(1); }
+// ── History ─────────────────────────────────────────────────────
+function renderHistory() {
+  var all = data.flatMap ? data.flatMap(function(e){return e.clients}) : [].concat.apply([],data.map(function(e){return e.clients}));
+  var specs = all.reduce(function(s,c){return s+c.specs},0);
+  var follows = all.reduce(function(s,c){return s+c.follows},0);
+  var responses = all.reduce(function(s,c){return s+c.responses},0);
+  var touches = specs+follows;
+  var rr = touches>0?Math.round(responses/touches*100):0;
+  document.getElementById('m-days').textContent = data.length;
+  document.getElementById('m-specs').textContent = specs;
+  document.getElementById('m-follows').textContent = follows;
+  document.getElementById('m-rr').textContent = rr+'%';
+
+  var body = document.getElementById('history-body');
+  if (!data.length) { body.innerHTML = '<div class="empty">No entries yet.</div>'; return; }
+  body.innerHTML = data.map(function(entry) {
+    var tots = entry.clients.reduce(function(a,c){return{specs:a.specs+c.specs,follows:a.follows+c.follows,responses:a.responses+c.responses}},{specs:0,follows:0,responses:0});
+    var rows = entry.clients.map(function(c) {
+      var badges = '';
+      if (c.tpSpec) badges += '<span class="badge b-spec">spec</span>';
+      if (c.tpFollow) badges += '<span class="badge b-follow">follow-up</span>';
+      if (c.tpResponse) badges += '<span class="badge b-response">response</span>';
+      var ctNames = (c.contacts||[]).map(function(ct){return ct.name}).join(', ');
+      return '<div class="hclient">'
+        +'<div class="hclient-co">'+c.company+'</div>'
+        +'<div style="margin-bottom:3px">'+badges+'</div>'
+        +'<div class="hclient-stats">'+c.specs+' specs · '+c.follows+' follow-ups · '+c.responses+' responses'+(ctNames?' · '+ctNames:'')+'</div>'
+        +(c.notes?'<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:3px">'+c.notes+'</div>':'')
+        +'</div>';
+    }).join('');
+    return '<div class="hday">'
+      +'<div class="hday-date">'+fmtDate(entry.date)+'</div>'
+      +'<div class="hday-meta"><span>'+tots.specs+' specs · '+tots.follows+' f/u · '+tots.responses+' resp</span>'
+      +'<button class="btn btn-danger" onclick="deleteEntry(\''+entry.date+'\')">Delete</button></div>'
+      +rows+'</div>';
+  }).join('');
 }
 
-// ── Init ─────────────────────────────────────────────────────────
-function _init() {
-  try {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth()+1).padStart(2,'0');
-    const dd = String(today.getDate()).padStart(2,'0');
-    document.getElementById('log-date').value = yyyy+'-'+mm+'-'+dd;
-  } catch(e) {}
-  addBlock();
-  loadFromSupabase();
+function deleteEntry(date) {
+  if (!confirm('Delete '+fmtDate(date)+'?')) return;
+  data = data.filter(function(e){return e.date!==date});
+  persist(); renderHistory();
 }
-// ── Auto init ────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', _init);
-if (document.readyState !== 'loading') { _init(); }
+
+// ── Contacts ────────────────────────────────────────────────────
+function renderContacts() {
+  var body = document.getElementById('contacts-body');
+  var today = new Date(); today.setHours(0,0,0,0);
+  var ctMap = {};
+  data.forEach(function(entry) {
+    var ed = new Date(entry.date); ed.setHours(0,0,0,0);
+    var ds = Math.round((today-ed)/86400000);
+    entry.clients.forEach(function(c) {
+      (c.contacts||[]).forEach(function(ct) {
+        var key = ct.name+'||'+c.company;
+        if (!ctMap[key]) ctMap[key]={name:ct.name,title:ct.title||'',company:c.company,lastDate:entry.date,ds:ds,specs:0,follows:0,responded:false};
+        if (ct.touchType==='spec') ctMap[key].specs++;
+        else if (ct.touchType==='follow') ctMap[key].follows++;
+        else if (ct.touchType==='response') ctMap[key].responded=true;
+        if (entry.date>=ctMap[key].lastDate){ctMap[key].lastDate=entry.date;ctMap[key].ds=ds;}
+      });
+    });
+  });
+
+  var contacts = Object.values(ctMap).sort(function(a,b){
+    if (a.responded&&!b.responded) return 1;
+    if (!a.responded&&b.responded) return -1;
+    return b.ds-a.ds;
+  });
+
+  if (!contacts.length) { body.innerHTML='<div class="empty">No contacts logged yet.<br>Add names when logging a day.</div>'; return; }
+
+  body.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px">'+contacts.length+' contacts</div>'
+    + contacts.map(function(c) {
+      var status, statusBg, statusCol;
+      if (c.responded) { status='Responded'; statusBg='var(--green-dim)'; statusCol='var(--green)'; }
+      else if (c.ds>=5) { status='Follow up now'; statusBg='var(--red-dim)'; statusCol='var(--red)'; }
+      else if (c.ds>=3) { status='Follow up soon'; statusBg='var(--amber-dim)'; statusCol='var(--amber)'; }
+      else { status='Active'; statusBg='var(--accent-dim)'; statusCol='var(--accent)'; }
+      return '<div class="contact-item">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">'
+        +'<div><span style="font-weight:500;font-size:14px">'+c.name+'</span>'
+        +(c.title?'<span style="font-size:12px;color:var(--muted);margin-left:6px">'+c.title+'</span>':'')
+        +'</div>'
+        +'<span class="pill" style="background:'+statusBg+';color:'+statusCol+';white-space:nowrap;margin-left:8px">'+status+'</span>'
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--muted)">'+c.company+' · last touch '+fmtDate(c.lastDate)+'</div>'
+        +'</div>';
+    }).join('');
+}
+
+// ── Toast ───────────────────────────────────────────────────────
+function showToast(msg, isErr) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isErr?'var(--red-dim)':'var(--green-dim)';
+  t.style.borderColor = isErr?'rgba(224,92,92,0.3)':'rgba(62,207,142,0.3)';
+  t.style.color = isErr?'var(--red)':'var(--green)';
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){t.style.display='none'},3000);
+}
+
+// ── Init ────────────────────────────────────────────────────────
+(function() {
+  var d = new Date();
+  document.getElementById('log-date').value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  addBlock();
+  loadData();
+})();
 </script>
 </body>
 </html>
