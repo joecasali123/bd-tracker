@@ -31,6 +31,7 @@
   --radius-sm: 10px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { height: -webkit-fill-available; }
 html, body { height: 100%; overflow: hidden; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
@@ -41,15 +42,17 @@ body {
 }
 
 /* ── Shell ── */
-.shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+.shell { display: flex; flex-direction: column; height: 100dvh; min-height: -webkit-fill-available; }
 
 /* ── Header ── */
 .header {
-  height: var(--header-h);
+  min-height: var(--header-h);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center;
-  padding: 0 18px;
+  padding: env(safe-area-inset-top) 18px 0;
+  padding-top: max(env(safe-area-inset-top), 12px);
+  padding-bottom: 12px;
   flex-shrink: 0;
   position: relative;
 }
@@ -308,7 +311,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
   margin-bottom: 10px;
 }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -409,7 +411,9 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+window.addEventListener('DOMContentLoaded', function() {
 const CLIENTS = ["Vinci Energies","Group Pomona","JCDecaux","Galeries Lafayette","Petit Forister","Opella","MSD Animal Health","Sodexo","Groupe Avril","Mobilize Financial Services","IN Groupe","EDF","Decathlon","Sopra Steria / John Cockerill","ENGIE","TotalEnergies","Veolia","Schneider Electric","Saint-Gobain","Michelin","Safran","Bouygues Construction","Carrefour","Auchan Retail","Air France-KLM","SNCF","BNP Paribas","Société Générale","Sanofi","Ipsen","Enedis","Other"];
 const PAGE_TITLES = { today:'Today', log:'Log day', history:'History', recap:'Weekly recap', contacts:'Contacts', book:'Contact book' };
 
@@ -1075,6 +1079,7 @@ try {
 } catch(e) {}
 addBlock();
 loadFromSupabase();
+}); // end DOMContentLoaded
 </script>
 </body>
 </html>
