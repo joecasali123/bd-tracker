@@ -487,10 +487,11 @@ function refreshCurrentPage() {
   const active = document.querySelector('.page.active');
   if (!active) return;
   const id = active.id.replace('page-','');
+  // Never auto-refresh today tab — targets are locked for the day
+  // Today tab only refreshes when user explicitly navigates to it
   if (id==='history') renderHistory();
   else if (id==='recap') renderRecap();
   else if (id==='contacts') renderContacts();
-  else if (id==='today') renderToday();
   else if (id==='book') renderBook();
 }
 
@@ -941,147 +942,133 @@ const HOT_CLIENTS = [
 ];
 
 // ── Today tab ─────────────────────────────────────────────────────
-function renderToday() {
-  const body = document.getElementById('today-body');
-  const today = new Date(); today.setHours(0,0,0,0);
-  const todayStr = today.toISOString().split('T')[0];
-
-  // Build last-contacted map per company
-  const lastContact = {};
-  data.forEach(entry => {
-    entry.clients.forEach(c => {
-      if (!lastContact[c.company] || entry.date > lastContact[c.company].date) {
-        lastContact[c.company] = { date: entry.date, specs: c.specs, follows: c.follows, responses: c.responses };
+// Targets are calculated ONCE per day using date as seed — never change mid-day
+function getDailyTargets() {
+  var today = new Date();
+  var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  var KEY = 'bd_targets_v2';
+  // Return cached if same day
+  try {
+    var stored = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (stored && stored.date === todayStr) { return stored.targets; }
+  } catch(e) {}
+  // Build last-contacted map
+  var lastContact = {};
+  data.forEach(function(entry) {
+    entry.clients.forEach(function(c) {
+      if (!lastContact[c.company] || entry.date > lastContact[c.company]) {
+        lastContact[c.company] = entry.date;
       }
     });
   });
+  // Score: hot tier first, then by days since last contact (never contacted = highest)
+  var allClients = CLIENTS.filter(function(c) { return c !== 'Other'; });
+  var todayMs = new Date(todayStr).getTime();
+  var scored = allClients.map(function(co) {
+    var lc = lastContact[co];
+    var daysSince = lc ? Math.round((todayMs - new Date(lc).getTime()) / 86400000) : 999;
+    var isHot = HOT_CLIENTS.indexOf(co) >= 0;
+    var score = (isHot ? 200 : 0) + Math.min(daysSince, 90);
+    return { co: co, daysSince: daysSince, isHot: isHot, lastDate: lc || null, score: score };
+  });
+  scored.sort(function(a,b) { return b.score - a.score; });
+  var targets = scored.slice(0, 3);
+  // Lock for today
+  try { localStorage.setItem(KEY, JSON.stringify({ date: todayStr, targets: targets })); } catch(e) {}
+  return targets;
+}
 
-  // Build contact follow-up list
-  const contactMap = {};
-  data.forEach(entry => {
-    const ed = new Date(entry.date); ed.setHours(0,0,0,0);
-    const ds = Math.round((today - ed) / 86400000);
-    entry.clients.forEach(c => {
-      (c.contacts||[]).forEach(ct => {
-        const key = ct.contactId || ct.name;
-        if (!contactMap[key]) contactMap[key] = { name:ct.name, title:ct.title||'', company:c.company, lastDate:entry.date, daysSince:ds, lastTp:'spec', responded:false };
-        const tp = ct.touchType || 'spec';
-        if (tp === 'response') contactMap[key].responded = true;
+function renderToday() {
+  var body = document.getElementById('today-body');
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  var dayName = today.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+
+  // Get locked targets — will NOT change until tomorrow
+  var targets = getDailyTargets();
+
+  // Build follow-up list from named contacts
+  var contactMap = {};
+  data.forEach(function(entry) {
+    var ed = new Date(entry.date); ed.setHours(0,0,0,0);
+    var ds = Math.round((today - ed) / 86400000);
+    entry.clients.forEach(function(c) {
+      (c.contacts||[]).forEach(function(ct) {
+        var key = ct.contactId || ct.name;
+        if (!contactMap[key]) {
+          contactMap[key] = { name:ct.name, title:ct.title||'', company:c.company, lastDate:entry.date, daysSince:ds, responded:false };
+        }
+        if (ct.touchType === 'response') { contactMap[key].responded = true; }
         if (entry.date >= contactMap[key].lastDate) {
           contactMap[key].lastDate = entry.date;
           contactMap[key].daysSince = ds;
-          contactMap[key].lastTp = tp;
         }
       });
     });
   });
 
-  // ── SECTION 1: Follow-ups due ─────────────────────────────────
-  const followUps = Object.values(contactMap)
-    .filter(c => !c.responded && c.daysSince >= 3)
-    .sort((a,b) => b.daysSince - a.daysSince);
+  var followUps = Object.values(contactMap)
+    .filter(function(c) { return !c.responded && c.daysSince >= 3; })
+    .sort(function(a,b) { return b.daysSince - a.daysSince; });
 
-  // ── SECTION 2: Responses to act on ───────────────────────────
-  const toActOn = Object.values(contactMap)
-    .filter(c => c.responded && c.lastDate >= new Date(today - 7*86400000).toISOString().split('T')[0]);
-
-  // ── SECTION 3: Spec targets for today ────────────────────────
-  // Lock targets for the day — only recalculate when date changes
-  const TARGETS_KEY = 'bd_daily_targets';
-  let savedTargets = null;
-  try {
-    const stored = JSON.parse(localStorage.getItem(TARGETS_KEY) || 'null');
-    if (stored && stored.date === todayStr) { savedTargets = stored.targets; }
-  } catch(e) {}
-
-  let targets = savedTargets;
-  if (!targets) {
-    // Calculate fresh targets for today
-    const allClients = CLIENTS.filter(c => c !== 'Other');
-    const scored = allClients.map(co => {
-      const lc = lastContact[co];
-      const daysSince = lc ? Math.round((today - new Date(lc.date)) / 86400000) : 999;
-      const isHot = HOT_CLIENTS.includes(co);
-      const neverContacted = !lc;
-      const score = (isHot ? 100 : 0) + Math.min(daysSince, 60) + (neverContacted ? 30 : 0);
-      return { co, daysSince, isHot, neverContacted, score, lc };
-    });
-    targets = scored.sort((a,b) => b.score - a.score).slice(0, 3);
-    // Save locked targets for today
-    try { localStorage.setItem(TARGETS_KEY, JSON.stringify({ date: todayStr, targets })); } catch(e) {}
-  }
+  var responded = Object.values(contactMap)
+    .filter(function(c) { return c.responded; })
+    .slice(0, 5);
 
   // ── Render ────────────────────────────────────────────────────
-  const dayName = today.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+  var html = '<div style="font-size:13px;color:var(--muted);margin-bottom:20px;">' + dayName + '</div>';
 
-  let html = `<div style="font-size:13px;color:var(--muted);margin-bottom:16px;font-family:'SF Mono',ui-monospace,monospace">${dayName}</div>`;
+  // Section: Spec targets — FIXED for today
+  html += '<div style="font-size:11px;font-weight:500;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Spec targets today</div>';
+  targets.forEach(function(t, i) {
+    var badge = t.isHot ? 'Hot tier' : (t.daysSince === 999 ? 'Never contacted' : t.daysSince + 'd since last');
+    var badgeBg = t.isHot ? 'var(--accent-dim)' : 'var(--amber-dim)';
+    var badgeCol = t.isHot ? 'var(--accent)' : 'var(--amber)';
+    var sub = t.isHot ? 'Active programme — keep momentum' : (t.daysSince === 999 ? 'Never spec'd — start today' : 'Not contacted in ' + t.daysSince + ' days');
+    html += '<div class="today-card" style="border-left:3px solid var(--accent);margin-bottom:10px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+      + '<div style="font-size:10px;color:var(--muted)">Target ' + (i+1) + '</div>'
+      + '<span style="font-size:10px;font-weight:500;background:' + badgeBg + ';color:' + badgeCol + ';padding:2px 8px;border-radius:20px">' + badge + '</span>'
+      + '</div>'
+      + '<div style="font-weight:500;font-size:16px;margin-bottom:4px">' + t.co + '</div>'
+      + '<div style="font-size:12px;color:var(--muted)">' + sub + '</div>'
+      + '</div>';
+  });
 
-  // Follow-ups
+  // Section: Follow-ups
   if (followUps.length) {
-    html += `<div style="font-size:11px;font-weight:500;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Follow up today (${followUps.length})</div>`;
-    followUps.forEach(c => {
-      const urgencyBg = c.daysSince >= 5 ? 'var(--red-dim)' : 'var(--amber-dim)';
-      const urgencyCol = c.daysSince >= 5 ? 'var(--red)' : 'var(--amber)';
-      html += `<div class="today-card" style="border-left:3px solid ${urgencyCol}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div style="font-weight:500;font-size:15px">${c.name}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:1px">${c.title ? c.title + ' · ' : ''}${c.company}</div>
-          </div>
-          <span style="font-size:11px;font-weight:500;background:${urgencyBg};color:${urgencyCol};padding:3px 9px;border-radius:20px;white-space:nowrap;margin-left:10px">${c.daysSince}d ago</span>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:8px">Last spec sent ${fmtDate(c.lastDate)} — no response yet</div>
-      </div>`;
+    html += '<div style="font-size:11px;font-weight:500;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin:20px 0 10px">Send follow-ups (' + followUps.length + ')</div>';
+    followUps.forEach(function(c) {
+      var col = c.daysSince >= 5 ? 'var(--red)' : 'var(--amber)';
+      var bg = c.daysSince >= 5 ? 'var(--red-dim)' : 'var(--amber-dim)';
+      html += '<div class="today-card" style="border-left:3px solid ' + col + ';margin-bottom:8px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<div>'
+        + '<div style="font-weight:500;font-size:15px">' + c.name + '</div>'
+        + '<div style="font-size:12px;color:var(--muted);margin-top:2px">' + (c.title ? c.title + ' · ' : '') + c.company + '</div>'
+        + '</div>'
+        + '<span style="font-size:11px;font-weight:500;background:' + bg + ';color:' + col + ';padding:3px 9px;border-radius:20px;white-space:nowrap;margin-left:8px">' + c.daysSince + 'd ago</span>'
+        + '</div>'
+        + '<div style="font-size:12px;color:var(--muted);margin-top:6px">Spec sent ' + fmtDate(c.lastDate) + ' — no response yet</div>'
+        + '</div>';
     });
   }
 
-  // Act on responses
-  if (toActOn.length) {
-    html += `<div style="font-size:11px;font-weight:500;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 10px">Responded — act now (${toActOn.length})</div>`;
-    toActOn.forEach(c => {
-      html += `<div class="today-card" style="border-left:3px solid var(--green)">
-        <div style="font-weight:500;font-size:15px">${c.name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:1px">${c.title ? c.title + ' · ' : ''}${c.company}</div>
-        <div style="font-size:12px;color:var(--green);margin-top:8px">Responded on ${fmtDate(c.lastDate)} — follow through</div>
-      </div>`;
+  // Section: Responded
+  if (responded.length) {
+    html += '<div style="font-size:11px;font-weight:500;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin:20px 0 10px">Responded — progress these</div>';
+    responded.forEach(function(c) {
+      html += '<div class="today-card" style="border-left:3px solid var(--green);margin-bottom:8px">'
+        + '<div style="font-weight:500;font-size:15px">' + c.name + '</div>'
+        + '<div style="font-size:12px;color:var(--muted);margin-top:2px">' + (c.title ? c.title + ' · ' : '') + c.company + '</div>'
+        + '<div style="font-size:12px;color:var(--green);margin-top:6px">Responded ' + fmtDate(c.lastDate) + '</div>'
+        + '</div>';
     });
   }
 
-  // Spec targets
-  html += `<div style="font-size:11px;font-weight:500;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 10px">Spec targets today</div>`;
-  if (!targets.length) {
-    html += `<div style="font-size:13px;color:var(--muted);padding:12px 0">All clients contacted today already.</div>`;
-  } else {
-    targets.forEach((t, i) => {
-      let tag = 'Hot';
-      if (!t.isHot && t.neverContacted) { tag = 'Never contacted'; }
-      else if (!t.isHot) { tag = t.daysSince + 'd since last'; }
-      let tagBg = 'var(--accent-dim)';
-      if (!t.isHot && t.neverContacted) { tagBg = 'var(--amber-dim)'; }
-      else if (!t.isHot) { tagBg = 'rgba(255,255,255,0.06)'; }
-      let tagCol = 'var(--accent)';
-      if (!t.isHot && t.neverContacted) { tagCol = 'var(--amber)'; }
-      else if (!t.isHot) { tagCol = 'var(--muted)'; }
-      let reason = 'Hot account — keep momentum';
-      if (t.neverContacted) { reason = 'Never spec\'d — start today'; }
-      else if (t.daysSince >= 7) { reason = 'Not contacted in ' + t.daysSince + ' days'; }
-      else if (!t.isHot && t.lc) { reason = 'Last contact ' + fmtDate(t.lc.date); }
-      html += `<div class="today-card" style="border-left:3px solid var(--accent)">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div style="font-size:10px;color:var(--muted);font-family:'SF Mono',ui-monospace,monospace;margin-bottom:3px">Target ${i+1}</div>
-            <div style="font-weight:500;font-size:16px">${t.co}</div>
-          </div>
-          <span style="font-size:10px;font-weight:500;background:${tagBg};color:${tagCol};padding:3px 9px;border-radius:20px;margin-left:10px;white-space:nowrap">${tag}</span>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px">${reason}</div>
-        <button class="btn btn-ghost" style="margin-top:10px;font-size:13px;padding:9px;text-align:center" onclick="go('log', document.getElementById('tab-log')); setTimeout(function(){ preSelectClient('${t.co}'); }, 50)">Log a spec for this client →</button>
-      </div>`;
-    });
-  }
-
-  if (!followUps.length && !toActOn.length && !targets.length) {
-    html = '<div class="empty">Log some days first and your daily briefing will appear here.</div>';
+  if (!followUps.length && !responded.length) {
+    html += '<div style="font-size:13px;color:var(--muted);margin-top:20px;padding:16px;background:var(--surface);border-radius:var(--radius-sm)">No follow-ups due yet — keep logging your specs and contacts will appear here.</div>';
   }
 
   body.innerHTML = html;
