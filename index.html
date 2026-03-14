@@ -1049,12 +1049,19 @@ function renderToday() {
     html += `<div style="font-size:13px;color:var(--muted);padding:12px 0">All clients contacted today already.</div>`;
   } else {
     targets.forEach((t, i) => {
-      const tag = t.isHot ? 'Hot' : t.neverContacted ? 'Never contacted' : `${t.daysSince}d since last`;
-      const tagBg = t.isHot ? 'var(--accent-dim)' : t.neverContacted ? 'var(--amber-dim)' : 'rgba(255,255,255,0.06)';
-      const tagCol = t.isHot ? 'var(--accent)' : t.neverContacted ? 'var(--amber)' : 'var(--muted)';
-      const reason = t.neverContacted ? 'Never spec'd — start today' :
-        t.daysSince >= 7 ? `Not contacted in ${t.daysSince} days` :
-        t.isHot ? 'Hot account — keep momentum' : `Last contact ${fmtDate(t.lc.date)}`;
+      let tag = 'Hot';
+      if (!t.isHot && t.neverContacted) { tag = 'Never contacted'; }
+      else if (!t.isHot) { tag = t.daysSince + 'd since last'; }
+      let tagBg = 'var(--accent-dim)';
+      if (!t.isHot && t.neverContacted) { tagBg = 'var(--amber-dim)'; }
+      else if (!t.isHot) { tagBg = 'rgba(255,255,255,0.06)'; }
+      let tagCol = 'var(--accent)';
+      if (!t.isHot && t.neverContacted) { tagCol = 'var(--amber)'; }
+      else if (!t.isHot) { tagCol = 'var(--muted)'; }
+      let reason = 'Hot account — keep momentum';
+      if (t.neverContacted) { reason = 'Never spec\'d — start today'; }
+      else if (t.daysSince >= 7) { reason = 'Not contacted in ' + t.daysSince + ' days'; }
+      else if (!t.isHot && t.lc) { reason = 'Last contact ' + fmtDate(t.lc.date); }
       html += `<div class="today-card" style="border-left:3px solid var(--accent)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
@@ -1064,7 +1071,7 @@ function renderToday() {
           <span style="font-size:10px;font-weight:500;background:${tagBg};color:${tagCol};padding:3px 9px;border-radius:20px;margin-left:10px;white-space:nowrap">${tag}</span>
         </div>
         <div style="font-size:12px;color:var(--muted);margin-top:6px">${reason}</div>
-        <button class="btn btn-ghost" style="margin-top:10px;font-size:13px;padding:9px;text-align:center" onclick="go('log', document.getElementById('tab-log')); setTimeout(()=>preSelectClient('${t.co}'),50)">Log a spec for this client →</button>
+        <button class="btn btn-ghost" style="margin-top:10px;font-size:13px;padding:9px;text-align:center" onclick="go('log', document.getElementById('tab-log')); setTimeout(function(){ preSelectClient('${t.co}'); }, 50)">Log a spec for this client →</button>
       </div>`;
     });
   }
@@ -1094,12 +1101,9 @@ function _init() {
   addBlock();
   loadFromSupabase();
 }
-// ── Auto init on DOM ready ────────────────────────────────────────
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', _init);
-} else {
-  _init();
-}
+// ── Auto init ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', _init);
+if (document.readyState !== 'loading') { _init(); }
 </script>
 </body>
 </html>
