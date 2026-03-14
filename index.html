@@ -304,7 +304,7 @@ function addBlock() {
     +(n>1?'<button class="btn btn-danger" onclick="document.getElementById(\'block-'+n+'\').remove()">Remove</button>':'')
     +'</div>'
     +'<div class="field"><label>Company</label>'
-    +'<select id="co-'+n+'"><option value="">— Select —</option>'+opts+'</select></div>'
+    +'<select id="co-'+n+'" onchange="handleCoChange('+n+')"><option value="__new__">+ Type a new company</option><option value="">— Select —</option>'+opts+'</select></div>'
     +'<div class="sec">What happened</div>'
     +'<div class="checks" style="margin-bottom:14px">'
     +'<label class="chk"><input type="checkbox" id="tp-spec-'+n+'"><span>Spec sent</span></label>'
@@ -355,12 +355,28 @@ function addContact(n) {
   document.getElementById('ctrows-'+n).insertAdjacentHTML('beforeend', html);
 }
 
+function handleCoChange(n) {
+  var sel = document.getElementById('co-'+n);
+  var inp = document.getElementById('co-new-'+n);
+  inp.style.display = sel.value === '__new__' ? 'block' : 'none';
+  if (sel.value === '__new__') { inp.focus(); }
+}
+
+function getCompany(n) {
+  var sel = document.getElementById('co-'+n);
+  if (sel.value === '__new__') {
+    var inp = document.getElementById('co-new-'+n);
+    return (inp ? inp.value.trim() : '') || '';
+  }
+  return sel.value;
+}
+
 function readBlocks() {
   var result = [];
   for (var i = 1; i <= blockCount; i++) {
     var el = document.getElementById('block-'+i);
     if (!el) continue;
-    var co = document.getElementById('co-'+i).value;
+    var co = getCompany(i);
     if (!co) continue;
     var contacts = [];
     var ctContainer = document.getElementById('ctrows-'+i);
