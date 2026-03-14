@@ -416,45 +416,52 @@ function resetForm() {
   addBlock();
 }
 
+function mergeClients(existing, newClients) {
+  // Always merge by company — never create duplicates for same company same day
+  newClients.forEach(function(nc) {
+    var co = (nc.company||'').trim().toLowerCase();
+    var found = -1;
+    for (var j = 0; j < existing.length; j++) {
+      if ((existing[j].company||'').trim().toLowerCase() === co) { found = j; break; }
+    }
+    if (found === -1) {
+      existing.push(nc);
+    } else {
+      var ex = existing[found];
+      ex.specs = (ex.specs||0) + (nc.specs||0);
+      ex.follows = (ex.follows||0) + (nc.follows||0);
+      ex.responses = (ex.responses||0) + (nc.responses||0);
+      if (nc.tpSpec) ex.tpSpec = true;
+      if (nc.tpFollow) ex.tpFollow = true;
+      if (nc.tpResponse) ex.tpResponse = true;
+      if (nc.notes && nc.notes.trim()) {
+        ex.notes = ex.notes ? ex.notes + ' | ' + nc.notes : nc.notes;
+      }
+      ex.contacts = (ex.contacts||[]).concat(nc.contacts||[]);
+    }
+  });
+  return existing;
+}
+
 function saveDay() {
   var date = document.getElementById('log-date').value;
   if (!date) { showToast('Please set a date', true); return; }
   var blocks = readBlocks();
   if (!blocks.length) { showToast('Select at least one client', true); return; }
 
-  // Find existing entry for this date
   var entryIdx = -1;
   for (var i = 0; i < data.length; i++) {
     if (data[i].date === date) { entryIdx = i; break; }
   }
 
   if (entryIdx === -1) {
-    // New day entry
-    data.unshift({ date: date, clients: blocks });
+    data.unshift({ date: date, clients: mergeClients([], blocks) });
   } else {
-    // Merge into existing day — update or add per company
-    blocks.forEach(function(newClient) {
-      var existing = data[entryIdx].clients;
-      var coIdx = -1;
-      for (var j = 0; j < existing.length; j++) {
-        if (existing[j].company === newClient.company) { coIdx = j; break; }
-      }
-      if (coIdx === -1) {
-        // New company for this day — just add
-        existing.push(newClient);
-      } else {
-        // Same company — merge: add counts, merge contacts, update flags
-        existing[coIdx].specs += newClient.specs;
-        existing[coIdx].follows += newClient.follows;
-        existing[coIdx].responses += newClient.responses;
-        if (newClient.tpSpec) existing[coIdx].tpSpec = true;
-        if (newClient.tpFollow) existing[coIdx].tpFollow = true;
-        if (newClient.tpResponse) existing[coIdx].tpResponse = true;
-        if (newClient.notes) existing[coIdx].notes = (existing[coIdx].notes ? existing[coIdx].notes + ' | ' : '') + newClient.notes;
-        existing[coIdx].contacts = (existing[coIdx].contacts||[]).concat(newClient.contacts);
-      }
-    });
+    data[entryIdx].clients = mergeClients(data[entryIdx].clients, blocks);
   }
+
+  // Re-sort by date descending
+  data.sort(function(a,b){ return b.date.localeCompare(a.date); });
 
   persist();
   showToast('Saved');
