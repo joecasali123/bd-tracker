@@ -298,7 +298,7 @@ function addBlock() {
   if (blockCount >= 3) { showToast('Max 3 clients per day', true); return; }
   blockCount++;
   var n = blockCount;
-  var opts = CLIENTS.map(function(c){return '<option>'+c+'</option>'}).join('');
+  var opts = CLIENTS.filter(function(c){return c!=='Other'}).map(function(c){return '<option value="'+c+'">'+c+'</option>'}).join('');
   var html = '<div class="cblock" id="block-'+n+'">'
     +'<div class="cblock-header"><span class="cblock-tag">Client '+n+'</span>'
     +(n>1?'<button class="btn btn-danger" onclick="document.getElementById(\'block-'+n+'\').remove()">Remove</button>':'')
@@ -411,20 +411,9 @@ function handleCtSel(el) {
   }
 }
 
-function handleCoChange(n) {
-  var sel = document.getElementById('co-'+n);
-  var inp = document.getElementById('co-new-'+n);
-  inp.style.display = sel.value === '__new__' ? 'block' : 'none';
-  if (sel.value === '__new__') { inp.focus(); }
-}
-
 function getCompany(n) {
-  var sel = document.getElementById('co-'+n);
-  if (sel.value === '__new__') {
-    var inp = document.getElementById('co-new-'+n);
-    return (inp ? inp.value.trim() : '') || '';
-  }
-  return sel.value;
+  var inp = document.getElementById('co-'+n);
+  return inp ? inp.value.trim() : '';
 }
 
 function readBlocks() {
