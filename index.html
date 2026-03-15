@@ -304,7 +304,8 @@ function addBlock() {
     +(n>1?'<button class="btn btn-danger" onclick="document.getElementById(\'block-'+n+'\').remove()">Remove</button>':'')
     +'</div>'
     +'<div class="field"><label>Company</label>'
-    +'<select id="co-'+n+'" onchange="handleCoChange('+n+')"><option value="__new__">+ Type a new company</option><option value="">— Select —</option>'+opts+'</select></div>'
+    +'<input type="text" id="co-'+n+'" list="dl-'+n+'" placeholder="Type or select a company…" autocomplete="off" style="width:100%">'
+    +'<datalist id="dl-'+n+'">'+opts+'</datalist></div>'
     +'<div class="sec">What happened</div>'
     +'<div class="checks" style="margin-bottom:14px">'
     +'<label class="chk"><input type="checkbox" id="tp-spec-'+n+'"><span>Spec sent</span></label>'
