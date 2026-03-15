@@ -95,6 +95,7 @@ textarea{resize:none;min-height:60px;line-height:1.5}
     </div>
     <div class="header-right">
       <div class="sync-dot" id="sync-dot"></div>
+      <button class="btn-refresh" style="margin-right:6px" onclick="showExport()">Export</button>
       <button class="btn-refresh" onclick="loadData()">Refresh</button>
     </div>
   </div>
@@ -127,6 +128,18 @@ textarea{resize:none;min-height:60px;line-height:1.5}
     <button class="tab" onclick="go('contacts',this)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</button>
   </div>
 </div>
+
+<!-- Export modal -->
+<div id="export-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:20px 18px;padding-bottom:calc(20px + env(safe-area-inset-bottom));width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;"></div>
+    <div style="font-size:16px;font-weight:500;margin-bottom:6px;">Export data</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Select all the text below (tap and hold → Select All), copy it, then paste into Claude for analysis.</div>
+    <textarea id="export-ta" rows="10" readonly style="width:100%;font-family:'SF Mono',ui-monospace,monospace;font-size:11px;line-height:1.5;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:10px;resize:none;"></textarea>
+    <button class="btn btn-ghost" onclick="hideExport()">Close</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
 var SB_URL = 'https://nkblbfjrwedrbrztcvcw.supabase.co';
@@ -533,7 +546,29 @@ function showToast(msg,isErr){
   t.style.color=isErr?'var(--red)':'var(--green)';
   t.style.display='block';
   clearTimeout(t._t);
-  t._t=setTimeout(function(){t.style.display='none';},3000);
+  t._t=setTimeout
+
+(function(){t.style.display='none';},3000);
+}
+
+
+
+
+
+
+
+
+
+function showExport() {
+  var payload = JSON.stringify({ exported: new Date().toISOString(), entries: data }, null, 2);
+  var ta = document.getElementById('export-ta');
+  ta.value = payload;
+  document.getElementById('export-overlay').style.display = 'flex';
+  setTimeout(function() { ta.focus(); ta.select(); }, 80);
+}
+
+function hideExport() {
+  document.getElementById('export-overlay').style.display = 'none';
 }
 
 (function(){
