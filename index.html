@@ -223,6 +223,7 @@ textarea{resize:none;min-height:60px;line-height:1.5}
     </div>
     <div class="hdr-r">
       <div class="dot" id="sync-dot"></div>
+      <button class="btn-hdr" onclick="loadData()" style="margin-right:4px">Refresh</button>
       <button class="btn-hdr" onclick="showExport()">Export</button>
     </div>
   </div>
@@ -302,25 +303,63 @@ var FOLLOW_TRIGGER=4;   // days since last contact before surfacing for follow-u
 var FOLLOW_CAP=3;       // max follow-ups on a spec before it drops out
 var LEAD_DAYS=7;        // days to aggressively attack a lead
 
-// ── SAMPLE DATA ─────────────────────────────
-var data=[
-  {date:'2025-07-10',clients:[
-    {company:'Vinci Energies',tpSpec:true,tpFollow:false,tpResponse:false,specs:2,follows:0,responses:0,notes:'Sent FICO & SAP BW profiles',contacts:[{name:'Arnaud Martin',title:'Head of SAP',touchType:'spec',date:'2025-07-10'}],temp:'hot',nextAction:'2025-07-13',nextActionNote:'Chase response',quickLogs:['📞 Called_2025-07-10']},
-    {company:'EDF',tpFollow:true,tpSpec:false,tpResponse:false,specs:0,follows:1,responses:0,notes:'',contacts:[{name:'Sophie Renard',title:'SAP Programme Lead',touchType:'follow',date:'2025-07-10'}],temp:'warm',nextAction:'2025-07-16',nextActionNote:'Send cando spec',quickLogs:[]}
-  ]},
-  {date:'2025-07-08',clients:[
-    {company:'Sanofi',tpResponse:true,tpSpec:false,tpFollow:false,specs:0,follows:0,responses:1,notes:'Positive — interested in SAP MM',contacts:[{name:'Pierre Morel',title:'HRIS Manager',touchType:'response',date:'2025-07-08'},{name:'Isabelle Gros',title:'SAP Basis Lead',touchType:'response',date:'2025-07-08'}],temp:'hot',nextAction:'2025-07-11',nextActionNote:'Send 2 profiles + rates',quickLogs:['📞 Called_2025-07-08','📧 Emailed_2025-07-08']},
-    {company:'TotalEnergies',tpSpec:true,tpFollow:false,tpResponse:false,specs:1,follows:0,responses:0,notes:'First contact',contacts:[{name:'Julien Blanc',title:'Digital HR Lead',touchType:'spec',date:'2025-07-08'}],temp:'cold',nextAction:'2025-07-22',nextActionNote:'Re-approach in 2 weeks',quickLogs:[]}
-  ]},
-  {date:'2025-07-05',clients:[
-    {company:'BNP Paribas',tpFollow:true,tpSpec:false,tpResponse:false,specs:0,follows:2,responses:0,notes:'',contacts:[{name:'Nathalie Vidal',title:'SAP CoE Lead',touchType:'follow',date:'2025-07-05'},{name:'Thomas Legrand',title:'IT Sourcing',touchType:'follow',date:'2025-07-05'}],temp:'warm',nextAction:'2025-07-09',nextActionNote:'Third follow-up or move on',quickLogs:[]}
-  ]}
-];
-var leads=[
-  {id:'l1',company:'Sanofi',contact:'Pierre Dupont',title:'Head of SAP',source:'Marc Leblanc',notes:'Actively hiring SAP MM. 2 headcount, budget confirmed.',date:'2025-07-09',logs:[],converted:false},
-  {id:'l2',company:'ENGIE',contact:'',title:'',source:'Sophie Martin',notes:'Candidate interviewed for SAP Basis role. Find the hiring manager.',date:'2025-07-10',logs:[],converted:false}
-];
+// ── SUPABASE ─────────────────────────────────
+var SB_URL='https://nkblbfjrwedrbrztcvcw.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rYmxiZmpyd2VkcmJyenRjdmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0OTM1NTYsImV4cCI6MjA4OTA2OTU1Nn0.asnuQM-Z6i8QDEPyrzRB_h1cPnOmUyPlwmho_L4f9JU';
+
+async function sbGet(table,filter){
+  var url=SB_URL+'/rest/v1/'+table+'?id=eq.'+filter;
+  var r=await fetch(url,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+  if(!r.ok)throw new Error(r.status);
+  return r.json();
+}
+async function sbSave(table,payload){
+  var r=await fetch(SB_URL+'/rest/v1/'+table+'?id=eq.'+payload.id,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify(payload)
+  });
+  if(!r.ok)throw new Error(r.status);
+}
+
+var data=[];
+var leads=[];
 var companyMeta={};
+var _saving=false;
+
+function dot(s){var d=document.getElementById('sync-dot');d.className='dot'+(s?' '+s:'');}
+
+async function loadData(){
+  dot('saving');
+  try{
+    var rows=await sbGet('bd_data','singleton');
+    var saved=rows&&rows.length?rows[0]:{};
+    data=saved.entries||[];
+    leads=saved.leads||[];
+    localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
+    dot('');
+  }catch(e){
+    dot('error');
+    try{var cache=JSON.parse(localStorage.getItem('bd_cache')||'{}');data=cache.entries||[];leads=cache.leads||[];}catch(x){}
+  }
+  initMeta();
+  renderToday();
+  renderHistory();
+  renderContacts();
+  renderLeads();
+  updateLeadsBadge();
+}
+
+async function persist(){
+  localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
+  if(_saving)return;
+  _saving=true;dot('saving');
+  try{
+    await sbSave('bd_data',{id:'singleton',entries:data,leads:leads,updated_at:new Date().toISOString()});
+    dot('');
+  }catch(e){dot('error');showToast('Save failed — check connection');}
+  _saving=false;
+}
 
 function initMeta(){
   data.forEach(function(e){
@@ -375,7 +414,7 @@ function pickTP(t){
   if(!companyMeta[_tgt])companyMeta[_tgt]={quickLogs:[]};
   companyMeta[_tgt].temp=nv;
   data.forEach(function(e){e.clients.forEach(function(c){if(c.company===_tgt)c.temp=nv;});});
-  closeTP();refreshPage();
+  persist();closeTP();refreshPage();
   showToast(nv?tInfo(nv).l:'Temperature cleared');
 }
 function closeTP(){var p=document.getElementById('tp-portal');p.style.display='none';p.innerHTML='';}
@@ -423,7 +462,7 @@ function toggleQL(company,action,date){
   var k=action+'_'+date,idx=companyMeta[company].quickLogs.indexOf(k);
   if(idx>=0)companyMeta[company].quickLogs.splice(idx,1);
   else companyMeta[company].quickLogs.push(k);
-  refreshPage();showToast(idx>=0?'Removed':action+' ✓');
+  persist();refreshPage();showToast(idx>=0?'Removed':action+' ✓');
 }
 
 // ── NEXT ACTION ──────────────────────────────
@@ -514,7 +553,7 @@ function saveLead(){
   leads.unshift({id:'l'+Date.now(),company:co,contact:(document.getElementById('lm-ct').value||'').trim(),title:(document.getElementById('lm-ti').value||'').trim(),source:(document.getElementById('lm-src').value||'').trim(),notes:(document.getElementById('lm-notes').value||'').trim(),date:todayStr(),logs:[],converted:false});
   if(!companyMeta[co])companyMeta[co]={quickLogs:[]};
   companyMeta[co].temp='hot';
-  closeLeadModal();renderLeads();renderToday();updateLeadsBadge();
+  persist();closeLeadModal();renderLeads();renderToday();updateLeadsBadge();
   showToast('🔥 Lead added — '+co);
 }
 function toggleLeadLog(id,action){
@@ -522,18 +561,18 @@ function toggleLeadLog(id,action){
   var t=todayStr();
   var idx=l.logs.findIndex(function(x){return x.date===t&&x.action===action;});
   if(idx>=0)l.logs.splice(idx,1);else l.logs.push({date:t,action:action});
-  renderLeads();renderToday();if(idx<0)showToast(action+' ✓');
+  persist();renderLeads();renderToday();if(idx<0)showToast(action+' ✓');
 }
 function convertLead(id){
   var l=leads.find(function(x){return x.id===id;});if(!l)return;
   l.converted=!l.converted;
-  renderLeads();renderToday();updateLeadsBadge();
+  persist();renderLeads();renderToday();updateLeadsBadge();
   showToast(l.converted?'✓ Converted':'Reopened');
 }
 function deleteLead(id){
   if(!confirm('Remove this lead?'))return;
   leads=leads.filter(function(l){return l.id!==id;});
-  renderLeads();renderToday();updateLeadsBadge();
+  persist();renderLeads();renderToday();updateLeadsBadge();
 }
 function updateLeadsBadge(){
   var n=leads.filter(function(l){return!l.converted&&leadLeft(l)>0;}).length;
@@ -976,7 +1015,7 @@ function saveDay(){
     if(b.temp)companyMeta[b.company].temp=b.temp;
     if(b.nextAction){companyMeta[b.company].nextAction=b.nextAction;companyMeta[b.company].nextActionNote=b.nextActionNote;}
   });
-  showToast('Saved ✓');resetForm();go('today',document.querySelector('.tab'));
+  persist();showToast('Saved ✓');resetForm();go('today',document.querySelector('.tab'));
 }
 
 // ── EXPORT ───────────────────────────────────
@@ -992,8 +1031,7 @@ function hideExport(){document.getElementById('export-overlay').classList.remove
   var d=new Date();
   document.getElementById('log-date').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   addBlock();
-  renderToday();
-  updateLeadsBadge();
+  loadData();
 })();
 </script>
 </body>
