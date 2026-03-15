@@ -303,10 +303,7 @@ function addBlock() {
     +'<div class="cblock-header"><span class="cblock-tag">Client '+n+'</span>'
     +(n>1?'<button class="btn btn-danger" onclick="document.getElementById(\'block-'+n+'\').remove()">Remove</button>':'')
     +'</div>'
-    +'<div class="field"><label>Company</label>'
-    +'<input type="text" id="co-'+n+'" list="dl-'+n+'" placeholder="Type or select a company…" autocomplete="off" style="width:100%">'
-    +'<datalist id="dl-'+n+'">'+opts+'</datalist></div>'
-    +'<div class="sec">What happened</div>'
+    +'<div class="field"><label>Company</label>'    +'<input type="text" id="co-'+n+'" placeholder="Type company name…" autocomplete="off" style="width:100%;margin-bottom:8px">'    +'<div id="co-list-'+n+'" style="display:flex;flex-wrap:wrap;gap:5px"></div>'    +'</div>'    +'<div class="sec">What happened</div>'
     +'<div class="checks" style="margin-bottom:14px">'
     +'<label class="chk"><input type="checkbox" id="tp-spec-'+n+'"><span>Spec sent</span></label>'
     +'<label class="chk"><input type="checkbox" id="tp-follow-'+n+'"><span>Follow-up sent</span></label>'
@@ -328,6 +325,32 @@ function addBlock() {
     +'<textarea id="notes-'+n+'" placeholder="e.g. Sent FICO profile to SAP lead…"></textarea></div>'
     +'</div>';
   document.getElementById('blocks').insertAdjacentHTML('beforeend', html);
+  // Populate company buttons
+  var coList = document.getElementById('co-list-'+n);
+  if (coList) {
+    CLIENTS.filter(function(c){return c!=='Other'}).forEach(function(c) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = c;
+      btn.style.cssText = 'background:var(--surface2);border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap';
+      btn.onclick = function() {
+        document.getElementById('co-'+n).value = c;
+        Array.from(coList.querySelectorAll('button')).forEach(function(b) {
+          b.style.background = b===btn ? 'var(--accent-dim)' : 'var(--surface2)';
+          b.style.borderColor = b===btn ? 'var(--accent-border)' : 'var(--border2)';
+          b.style.color = b===btn ? 'var(--accent)' : 'var(--muted)';
+        });
+      };
+      coList.appendChild(btn);
+    });
+    // Filter buttons as user types
+    document.getElementById('co-'+n).addEventListener('input', function() {
+      var v = this.value.toLowerCase();
+      Array.from(coList.querySelectorAll('button')).forEach(function(b) {
+        b.style.display = (!v || b.textContent.toLowerCase().indexOf(v)>=0) ? '' : 'none';
+      });
+    });
+  }
 }
 
 function step(id, delta) {
