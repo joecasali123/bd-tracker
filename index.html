@@ -337,22 +337,78 @@ function step(id, delta) {
   disp.textContent = v;
 }
 
+// ── Contact memory ──────────────────────────────────────────────
+// Builds a map of company -> [{name, title}] from all logged data
+function getKnownContacts(company) {
+  var seen = {};
+  var result = [];
+  data.forEach(function(entry) {
+    entry.clients.forEach(function(c) {
+      if ((c.company||'').trim().toLowerCase() !== (company||'').trim().toLowerCase()) return;
+      (c.contacts||[]).forEach(function(ct) {
+        var key = (ct.name||'').trim().toLowerCase();
+        if (key && !seen[key]) {
+          seen[key] = true;
+          result.push({ name: ct.name.trim(), title: ct.title||'' });
+        }
+      });
+    });
+  });
+  return result;
+}
+
 function addContact(n) {
   if (!contactCounts[n]) contactCounts[n] = 0;
   contactCounts[n]++;
   var ci = contactCounts[n];
   var id = 'ct-'+n+'-'+ci;
+  var co = getCompany(n);
+  var known = getKnownContacts(co);
+  // Build name dropdown if we have known contacts
+  var nameField = '';
+  if (known.length > 0) {
+    var knownOpts = known.map(function(k) {
+      return '<option value="'+k.name+'|'+k.title+'">'+k.name+(k.title?' — '+k.title:'')+'</option>';
+    }).join('');
+    nameField = '<div class="field" style="margin-bottom:8px"><label>Contact</label>'
+      +'<select id="'+id+'-sel" onchange="handleCtSel(this)" data-ctid="'+id+'">'
+      +'<option value="">— Select or add new —</option>'
+      +knownOpts
+      +'<option value="__new__">+ New contact</option>'
+      +'</select></div>'
+      +'<div id="'+id+'-newfields" style="display:none">'
+      +'<div class="g2" style="margin-bottom:8px">'
+      +'<div class="field" style="margin:0"><label>Name</label><input type="text" id="'+id+'-name" placeholder="Jean Dupont"></div>'
+      +'<div class="field" style="margin:0"><label>Job title</label><input type="text" id="'+id+'-title" placeholder="Head of SAP"></div>'
+      +'</div></div>';
+  } else {
+    // No known contacts yet — show plain text fields
+    nameField = '<div class="g2" style="margin-bottom:8px">'
+      +'<div class="field" style="margin:0"><label>Name</label><input type="text" id="'+id+'-name" placeholder="Jean Dupont"></div>'
+      +'<div class="field" style="margin:0"><label>Job title</label><input type="text" id="'+id+'-title" placeholder="Head of SAP"></div>'
+      +'</div>';
+  }
   var html = '<div class="ctrow" id="'+id+'">'
     +'<div class="ctrow-top"><span style="font-size:12px;color:var(--muted)">Contact '+ci+'</span>'
     +'<button class="btn btn-danger" onclick="document.getElementById(\''+id+'\').remove()">Remove</button></div>'
-    +'<div class="g2" style="margin-bottom:8px">'
-    +'<div class="field" style="margin:0"><label>Name</label><input type="text" id="'+id+'-name" placeholder="Jean Dupont"></div>'
-    +'<div class="field" style="margin:0"><label>Job title</label><input type="text" id="'+id+'-title" placeholder="Head of SAP"></div>'
-    +'</div>'
+    +nameField
     +'<div class="field" style="margin:0"><label>Touchpoint</label>'
     +'<select id="'+id+'-tp"><option value="spec">Spec sent</option><option value="follow">Follow-up</option><option value="response">Response received</option></select>'
     +'</div></div>';
   document.getElementById('ctrows-'+n).insertAdjacentHTML('beforeend', html);
+}
+
+function handleCtSel(el) {
+  var id = el.getAttribute('data-ctid');
+  var newFields = document.getElementById(id+'-newfields');
+  if (!newFields) return;
+  if (el.value === '__new__') {
+    newFields.style.display = 'block';
+    var nameInp = document.getElementById(id+'-name');
+    if (nameInp) nameInp.focus();
+  } else {
+    newFields.style.display = 'none';
+  }
 }
 
 function handleCoChange(n) {
@@ -383,12 +439,29 @@ function readBlocks() {
     if (ctContainer) {
       Array.from(ctContainer.children).forEach(function(row) {
         var id = row.id;
-        var name = (document.getElementById(id+'-name')||{}).value||'';
-        name = name.trim();
+        var name = '', title = '';
+        // Check if using dropdown (known contacts)
+        var sel = document.getElementById(id+'-sel');
+        if (sel) {
+          if (sel.value === '__new__') {
+            // New contact typed in
+            name = ((document.getElementById(id+'-name')||{}).value||'').trim();
+            title = ((document.getElementById(id+'-title')||{}).value||'').trim();
+          } else if (sel.value) {
+            // Known contact selected from dropdown
+            var parts = sel.value.split('|');
+            name = (parts[0]||'').trim();
+            title = (parts[1]||'').trim();
+          }
+        } else {
+          // Plain text fields (no known contacts yet)
+          name = ((document.getElementById(id+'-name')||{}).value||'').trim();
+          title = ((document.getElementById(id+'-title')||{}).value||'').trim();
+        }
         if (!name) return;
         contacts.push({
           name: name,
-          title: ((document.getElementById(id+'-title')||{}).value||'').trim(),
+          title: title,
           touchType: (document.getElementById(id+'-tp')||{}).value||'spec',
           date: document.getElementById('log-date').value
         });
