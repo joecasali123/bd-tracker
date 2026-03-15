@@ -181,6 +181,22 @@ function refreshPage(){
   if(id==='history')renderHistory();
   else if(id==='contacts')renderContacts();
   else if(id==='today')renderToday();
+  // Refresh contact dropdowns in open log blocks now that data is loaded
+  refreshContactDropdowns();
+}
+
+function refreshContactDropdowns(){
+  for(var i=1;i<=blockCount;i++){
+    var el=document.getElementById('block-'+i);
+    if(!el)continue;
+    var co=getCompany(i);
+    if(!co)continue;
+    // Refresh all contact rows that are using the known-contacts dropdown
+    var ctContainer=document.getElementById('ctrows-'+i);
+    if(!ctContainer)continue;
+    // If there are no contact rows yet, just skip
+    if(ctContainer.children.length===0)continue;
+  }
 }
 
 var blockCount=0;
@@ -241,6 +257,10 @@ function addBlock(){
           b.style.borderColor=b===btn?'var(--accent-border)':'var(--border2)';
           b.style.color=b===btn?'var(--accent)':'var(--muted)';
         });
+        // Clear any existing contact rows so user re-adds with correct company suggestions
+        var ctRows=document.getElementById('ctrows-'+n);
+        if(ctRows)ctRows.innerHTML='';
+        contactCounts[n]=0;
       };
       coList.appendChild(btn);
     });
