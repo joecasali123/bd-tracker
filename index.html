@@ -769,6 +769,11 @@ function showToast(msg, isErr) {
 
 // ── Init ────────────────────────────────────────────────────────
 (function() {
+  // Clear any old cached targets from previous version
+  localStorage.removeItem('bd_targets_v1');
+  localStorage.removeItem('bd_targets_v2');
+  localStorage.removeItem('bd_targets_v3');
+  localStorage.removeItem('bd_daily_targets');
   var d = new Date();
   document.getElementById('log-date').value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   addBlock();
