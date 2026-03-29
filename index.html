@@ -752,7 +752,7 @@ function renderHistory(){
   var body=document.getElementById('history-body');
   if(!data.length){body.innerHTML='<div class="empty">No entries yet.</div>';return;}
   body.innerHTML=data.map(function(e){
-    var tots=e.clients.reduce(function(a,c){return{specs:a.specs+(c.specs||0),follows:a.follows+(c.follows||0),responses:a.responses+(c.responses||0)};},{specs:0,follows:0,responses:0});
+    var tots=(e.clients||[]).reduce(function(a,c){return{specs:a.specs+(c.specs||0),follows:a.follows+(c.follows||0),responses:a.responses+(c.responses||0)};},{specs:0,follows:0,responses:0});
     var rows=e.clients.map(function(c){
       var bdg='';
       if(c.tpSpec)bdg+='<span class="badge b-spec">spec</span>';
