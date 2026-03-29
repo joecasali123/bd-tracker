@@ -359,10 +359,10 @@ async function loadData(){
 }
 
 async function persist(){
-  // Save to localStorage immediately
   localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
   dot('saving');
   try{
+    var payload=JSON.stringify({id:'singleton',entries:data,leads:leads,updated_at:new Date().toISOString()});
     var r=await fetch(SB_URL+'/rest/v1/bd_data',{
       method:'POST',
       headers:{
@@ -371,14 +371,15 @@ async function persist(){
         'Content-Type':'application/json',
         'Prefer':'resolution=merge-duplicates,return=minimal'
       },
-      body:JSON.stringify({id:'singleton',entries:data,leads:leads,updated_at:new Date().toISOString()})
+      body:payload
     });
-    if(!r.ok){var msg=await r.text();throw new Error(r.status+': '+msg);}
+    if(!r.ok){var t=await r.text();throw new Error(r.status+' '+t);}
     dot('');
+    console.log('Saved OK');
   }catch(e){
-    console.error('Save error:',e.message);
     dot('error');
-    showToast('⚠️ Not saved to server — check connection');
+    console.error('Save failed:',e.message);
+    showToast('Save failed: '+e.message);
   }
 }
 
