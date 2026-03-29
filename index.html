@@ -307,26 +307,49 @@ var LEAD_DAYS=7;        // days to aggressively attack a lead
 var SB_URL='https://nkblbfjrwedrbrztcvcw.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rYmxiZmpyd2VkcmJyenRjdmN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0OTM1NTYsImV4cCI6MjA4OTA2OTU1Nn0.asnuQM-Z6i8QDEPyrzRB_h1cPnOmUyPlwmho_L4f9JU';
 
+var data=[];
+var leads=[];
+var companyMeta={};
+
+function initMeta(){
+  companyMeta={};
+  data.forEach(function(e){
+    e.clients.forEach(function(c){
+      if(!companyMeta[c.company]){
+        companyMeta[c.company]={temp:c.temp||'',nextAction:c.nextAction||'',nextActionNote:c.nextActionNote||'',quickLogs:c.quickLogs?c.quickLogs.slice():[]};
+      }
+    });
+  });
+}
+
 async function loadData(){
   dot('saving');
   try{
     var r=await fetch(SB_URL+'/rest/v1/bd_data?id=eq.singleton',{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
     });
     if(!r.ok)throw new Error(r.status);
     var rows=await r.json();
-    if(rows&&rows.length){
-      data=rows[0].entries||[];
+    if(rows&&rows.length&&rows[0].entries){
+      data=rows[0].entries;
       leads=rows[0].leads||[];
-      localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
+    } else {
+      // Nothing in DB yet — start fresh
+      data=[];
+      leads=[];
     }
+    localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
     dot('');
   }catch(e){
     dot('error');
-    try{var c=JSON.parse(localStorage.getItem('bd_cache')||'{}');data=c.entries||[];leads=c.leads||[];}catch(x){}
-    showToast('⚠️ Could not reach server — showing cached data');
+    // Network error — fall back to cache
+    try{
+      var c=JSON.parse(localStorage.getItem('bd_cache')||'{}');
+      data=c.entries||[];
+      leads=c.leads||[];
+    }catch(x){data=[];leads=[];}
+    showToast('⚠️ Offline — showing cached data');
   }
-  companyMeta={};
   initMeta();
   renderToday();
   renderHistory();
@@ -335,13 +358,11 @@ async function loadData(){
   updateLeadsBadge();
 }
 
-var _saving=false;
 async function persist(){
+  // Save to localStorage immediately
   localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
-  if(_saving)return;
-  _saving=true;dot('saving');
+  dot('saving');
   try{
-    // PATCH updates the existing row — simpler and more reliable than POST upsert
     var r=await fetch(SB_URL+'/rest/v1/bd_data?id=eq.singleton',{
       method:'PATCH',
       headers:{
@@ -355,27 +376,11 @@ async function persist(){
     if(!r.ok){var msg=await r.text();throw new Error(r.status+': '+msg);}
     dot('');
   }catch(e){
-    console.error('Save error:',e);
+    console.error('Save error:',e.message);
     dot('error');
-    showToast('⚠️ Save failed — tap Refresh to retry');
+    showToast('⚠️ Not saved to server — check connection');
   }
-  _saving=false;
 }
-
-var data=[];
-var leads=[];
-var companyMeta={};
-
-function initMeta(){
-  data.forEach(function(e){
-    e.clients.forEach(function(c){
-      if(!companyMeta[c.company]){
-        companyMeta[c.company]={temp:c.temp||'',nextAction:c.nextAction||'',nextActionNote:c.nextActionNote||'',quickLogs:c.quickLogs?c.quickLogs.slice():[]};
-      }
-    });
-  });
-}
-initMeta();
 
 // ── UTILS ───────────────────────────────────
 function fmtDate(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
