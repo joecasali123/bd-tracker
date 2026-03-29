@@ -430,7 +430,7 @@ function pickTP(t){
   var nv=prev===t?'':t;
   if(!companyMeta[_tgt])companyMeta[_tgt]={quickLogs:[]};
   companyMeta[_tgt].temp=nv;
-  data.forEach(function(e){e.clients.forEach(function(c){if(c.company===_tgt)c.temp=nv;});});
+  data.forEach(function(e){(e.clients||[]).forEach(function(c){if(c.company===_tgt)c.temp=nv;});});
   persist();closeTP();refreshPage();
   showToast(nv?tInfo(nv).l:'Temperature cleared');
 }
@@ -439,14 +439,14 @@ function closeTP(){var p=document.getElementById('tp-portal');p.style.display='n
 // ── TOUCHPOINTS ─────────────────────────────
 function getTPs(company){
   var n=0;
-  data.forEach(function(e){e.clients.forEach(function(c){if(c.company===company)n++;});});
+  data.forEach(function(e){(e.clients||[]).forEach(function(c){if(c.company===company)n++;});});
   return n;
 }
 // Count follow-ups since last spec (Lombard FOLLOW_CAP logic)
 function getFollowsSinceSpec(company){
   var entries=[];
   data.forEach(function(e){
-    e.clients.forEach(function(c){if(c.company===company)entries.push({date:e.date,c:c});});
+    (e.clients||[]).forEach(function(c){if(c.company===company)entries.push({date:e.date,c:c});});
   });
   entries.sort(function(a,b){return b.date.localeCompare(a.date);});
   var count=0;
@@ -514,7 +514,7 @@ function buildChecklist(){
   data.forEach(function(e){
     var ed=new Date(e.date);ed.setHours(0,0,0,0);
     var ds=Math.round((today-ed)/86400000);
-    e.clients.forEach(function(c){
+    (e.clients||[]).forEach(function(c){
       var co=c.company;
       if(!map[co]||e.date>map[co].lastDate){
         map[co]={company:co,lastDate:e.date,lastDs:ds,
@@ -740,7 +740,7 @@ function renderToday(){
 
 // ── HISTORY ──────────────────────────────────
 function renderHistory(){
-  var all=[];data.forEach(function(e){e.clients.forEach(function(c){all.push(c);});});
+  var all=[];data.forEach(function(e){(e.clients||[]).forEach(function(c){all.push(c);});});
   var specs=all.reduce(function(s,c){return s+(c.specs||0);},0);
   var follows=all.reduce(function(s,c){return s+(c.follows||0);},0);
   var responses=all.reduce(function(s,c){return s+(c.responses||0);},0);
@@ -800,7 +800,7 @@ function renderContacts(){
   data.forEach(function(e){
     var ed=new Date(e.date);ed.setHours(0,0,0,0);
     var ds=Math.round((today-ed)/86400000);
-    e.clients.forEach(function(c){
+    (e.clients||[]).forEach(function(c){
       (c.contacts||[]).forEach(function(ct){
         var k=ct.name+'||'+c.company;
         if(!map[k])map[k]={name:ct.name,title:ct.title||'',company:c.company,lastDate:e.date,ds:ds,responded:false};
@@ -861,7 +861,7 @@ function refreshPage(){
 var blockCount=0,contactCounts={};
 function getKnownContacts(co){
   var seen={},res=[];
-  data.forEach(function(e){e.clients.forEach(function(c){
+  data.forEach(function(e){(e.clients||[]).forEach(function(c){
     if((c.company||'').trim().toLowerCase()!==(co||'').trim().toLowerCase())return;
     (c.contacts||[]).forEach(function(ct){
       var k=(ct.name||'').trim().toLowerCase();
