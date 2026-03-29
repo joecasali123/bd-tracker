@@ -323,15 +323,15 @@ function initMeta(){
 }
 
 async function loadData(){
-  dot('saving');
+  dot('loading');
   try{
-    var r=await fetch(SB_URL+'/rest/v1/bd_data?id=eq.singleton',{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    var r=await fetch(SB_URL+'/rest/v1/bd_data?id=eq.singleton&select=entries,leads',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Accept':'application/json'}
     });
     if(!r.ok)throw new Error(r.status);
     var rows=await r.json();
-    if(rows&&rows.length&&rows[0].entries){
-      data=rows[0].entries;
+    if(rows&&rows.length){
+      data=rows[0].entries||[];
       leads=rows[0].leads||[];
     } else {
       // Nothing in DB yet — start fresh
@@ -363,15 +363,15 @@ async function persist(){
   localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
   dot('saving');
   try{
-    var r=await fetch(SB_URL+'/rest/v1/bd_data?id=eq.singleton',{
-      method:'PATCH',
+    var r=await fetch(SB_URL+'/rest/v1/bd_data',{
+      method:'POST',
       headers:{
         'apikey':SB_KEY,
         'Authorization':'Bearer '+SB_KEY,
         'Content-Type':'application/json',
-        'Prefer':'return=minimal'
+        'Prefer':'resolution=merge-duplicates,return=minimal'
       },
-      body:JSON.stringify({entries:data,leads:leads,updated_at:new Date().toISOString()})
+      body:JSON.stringify({id:'singleton',entries:data,leads:leads,updated_at:new Date().toISOString()})
     });
     if(!r.ok){var msg=await r.text();throw new Error(r.status+': '+msg);}
     dot('');
