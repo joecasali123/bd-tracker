@@ -314,7 +314,7 @@ var companyMeta={};
 function initMeta(){
   companyMeta={};
   data.forEach(function(e){
-    e.clients.forEach(function(c){
+    (e.clients||[]).forEach(function(c){
       if(!companyMeta[c.company]){
         companyMeta[c.company]={temp:c.temp||'',nextAction:c.nextAction||'',nextActionNote:c.nextActionNote||'',quickLogs:c.quickLogs?c.quickLogs.slice():[]};
       }
