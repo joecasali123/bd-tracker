@@ -322,6 +322,12 @@ function initMeta(){
   });
 }
 
+function dot(state){
+  var el=document.getElementById('sync-dot');
+  if(!el)return;
+  el.style.background=state==='saving'||state==='loading'?'var(--amber)':state==='error'?'var(--red)':'var(--green)';
+}
+
 async function loadData(){
   dot('loading');
   try{
