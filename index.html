@@ -310,24 +310,21 @@ var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 async function loadData(){
   dot('saving');
   try{
-    var url=SB_URL+'/rest/v1/bd_data?id=eq.singleton';
-    var r=await fetch(url,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    var r=await fetch(SB_URL+'/rest/v1/bd_data?id=eq.singleton',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}
+    });
     if(!r.ok)throw new Error(r.status);
     var rows=await r.json();
-    var saved=rows&&rows.length?rows[0]:{};
-    // Only update if we actually got data back
-    data=saved.entries||[];
-    leads=saved.leads||[];
-    localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
+    if(rows&&rows.length){
+      data=rows[0].entries||[];
+      leads=rows[0].leads||[];
+      localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
+    }
     dot('');
   }catch(e){
     dot('error');
-    // Fall back to cache — do NOT wipe data
-    try{
-      var cache=JSON.parse(localStorage.getItem('bd_cache')||'{}');
-      data=cache.entries||[];
-      leads=cache.leads||[];
-    }catch(x){}
+    try{var c=JSON.parse(localStorage.getItem('bd_cache')||'{}');data=c.entries||[];leads=c.leads||[];}catch(x){}
+    showToast('⚠️ Could not reach server — showing cached data');
   }
   companyMeta={};
   initMeta();
@@ -340,28 +337,27 @@ async function loadData(){
 
 var _saving=false;
 async function persist(){
-  // Always save to localStorage first so data is never lost
   localStorage.setItem('bd_cache',JSON.stringify({entries:data,leads:leads}));
   if(_saving)return;
   _saving=true;dot('saving');
   try{
-    // Use upsert: POST with Prefer:resolution=merge-duplicates on the table endpoint (no filter)
-    var r=await fetch(SB_URL+'/rest/v1/bd_data',{
-      method:'POST',
+    // PATCH updates the existing row — simpler and more reliable than POST upsert
+    var r=await fetch(SB_URL+'/rest/v1/bd_data?id=eq.singleton',{
+      method:'PATCH',
       headers:{
         'apikey':SB_KEY,
         'Authorization':'Bearer '+SB_KEY,
         'Content-Type':'application/json',
-        'Prefer':'resolution=merge-duplicates,return=minimal'
+        'Prefer':'return=minimal'
       },
-      body:JSON.stringify({id:'singleton',entries:data,leads:leads,updated_at:new Date().toISOString()})
+      body:JSON.stringify({entries:data,leads:leads,updated_at:new Date().toISOString()})
     });
-    if(!r.ok){var msg=await r.text();throw new Error(r.status+' '+msg);}
+    if(!r.ok){var msg=await r.text();throw new Error(r.status+': '+msg);}
     dot('');
   }catch(e){
-    console.error('Persist error:',e);
+    console.error('Save error:',e);
     dot('error');
-    showToast('Save failed — data kept locally');
+    showToast('⚠️ Save failed — tap Refresh to retry');
   }
   _saving=false;
 }
